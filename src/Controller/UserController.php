@@ -7,6 +7,7 @@ use App\Form\UserType;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -57,9 +58,19 @@ class UserController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            /** @var UploadedFile $profilePictureFile */
+            $profilePictureFile = $form->get('profilePictureFile')->getData();
+
+            if ($profilePictureFile) {
+                $user->setProfilePictureFile($profilePictureFile);
+            }
+
+            // Flush the changes to the database
             $entityManager->flush();
 
-            // Redirection vers la page de profil de l'utilisateur après l'édition
+            // Important: Unset the file to avoid serialization issues
+            $user->setProfilePictureFile(null);
+
             return $this->redirectToRoute('app_user_profile', ['id' => $user->getId()], Response::HTTP_SEE_OTHER);
         }
 
@@ -68,6 +79,7 @@ class UserController extends AbstractController
             'form' => $form,
         ]);
     }
+
 
 
     #[Route('/{id}', name: 'app_user_delete', methods: ['POST'])]

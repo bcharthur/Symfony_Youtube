@@ -1,5 +1,3 @@
-{# templates/profile/index.html.twig #}
-
 {% extends 'base.html.twig' %}
 
 {% block title %}Profil de {{ user.username }}{% endblock %}
@@ -11,7 +9,7 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-header" style="background-image: url('https://via.placeholder.com/800x200'); background-size: cover; background-position: center;">
-                        <img src="https://via.placeholder.com/150" alt="User Avatar" class="rounded-circle img-thumbnail mx-auto d-block mt-4" style="width: 150px; height: 150px;">
+                        <img src="{{ user.profilePicture ? asset('uploads/profile_pictures/' ~ user.profilePicture) : 'https://via.placeholder.com/150' }}" alt="User Avatar" class="rounded-circle img-thumbnail mx-auto d-block mt-4" style="width: 150px; height: 150px;">
                     </div>
                     <div class="card-body text-center">
                         <h3>{{ user.username }}</h3>
