@@ -1,0 +1,23 @@
+<!-- home/_video_list.html.twig -->
+{% for video in videos %}
+    <div class="col video-item" data-title="{{ video.title }}">
+        <div class="card">
+            <a href="{{ path('app_video_show', {'id': video.id}) }}">
+                {% if video.thumbnailFilename %}
+                    <img src="{{ asset('media/thumbnails/' ~ video.thumbnailFilename) }}" class="card-img-top" alt="{{ video.title }}">
+                {% else %}
+                    <img src="https://via.placeholder.com/320x180" class="card-img-top" alt="{{ video.title }}">
+                {% endif %}
+            </a>
+            <div class="card-body">
+                <h5 class="card-title">{{ video.title }}</h5>
+                <p class="card-text">
+                    <small class="text-muted">Ajouté le {{ video.createdAt|date('d/m/Y H:i') }}</small><br>
+                    <small class="text-muted">Mise en ligne par : {{ video.user.email }}</small>
+                </p>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <p>Aucune vidéo disponible pour le moment.</p>
+{% endfor %}

@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Item index{% endblock %}
+
+{% block body %}
+
+<div class="container mt-5">
+    <div class="example-wrapper">
+        <h1 class="display-4">Liste des items</h1>
+
+        <h2 class="mt-4">Items disponibles</h2>
+        <table class="table mt-3">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+
+                {% if is_granted('ROLE_ADMIN') %}
+                    <th>actions</th>
+                {% else %}
+
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.price }}</td>
+
+                {% if is_granted('ROLE_ADMIN') %}
+                    <td>
+                        <a class="btn btn-info" href="{{ path('app_item_show', {'id': item.id}) }}"><i class="fa-solid fa-eye"></i></a>
+                        <a class="btn btn-warning" href="{{ path('app_item_edit', {'id': item.id}) }}"><i class="fa-solid fa-pen-to-square"></i></a>
+                    </td>
+                {% else %}
+
+                {% endif %}
+
+
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="4">Aucun item trouvé</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {% if is_granted('ROLE_ADMIN') %}
+        <td>
+            <a class="btn btn-primary" href="{{ path('app_item_new') }}"><i class="fa-solid fa-plus"></i></a>
+            <a class="btn btn-primary" href="{{ path('app_video_index') }}"><i class="fa-solid fa-arrow-left"></i></a>
+        </td>
+    {% else %}
+        <a class="btn btn-primary" href="{{ path('app_video_index') }}">Retour à l'accueil</a>
+    {% endif %}
+
+
+
+{% endblock %}

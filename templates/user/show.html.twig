@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}User{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="example-wrapper">
+    <h1>User</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ user.id }}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>{{ user.email }}</td>
+            </tr>
+            <tr>
+                <th>Roles</th>
+                <td>{{ user.roles ? user.roles|json_encode : '' }}</td>
+            </tr>
+            <tr>
+                <th>Password</th>
+                <td>{{ user.password }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+        <div class="d-flex align-items-center mt-3">
+            <a class="btn btn-primary me-2" href="{{ path('app_user_index') }}"><i class="fa-solid fa-arrow-left"></i></a>
+
+            {% if is_granted('ROLE_ADMIN') %}
+                <a class="btn btn-primary me-2" href="{{ path('app_user_edit', {'id': user.id}) }}"><i class="fa-solid fa-pen-to-square"></i></a>
+
+                <form method="post" action="{{ path('app_user_delete', {'id': user.id}) }}" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                    <button class="btn btn-danger"><i class="fa-solid fa-trash"></i></button>
+                </form>
+
+
+
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

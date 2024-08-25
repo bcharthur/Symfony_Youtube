@@ -1,0 +1,11 @@
+<div id="comments-list">
+    {% for comment in video.comments %}
+        <div class="comment mb-2">
+            <strong>{{ comment.user.getUsername() }}</strong>
+            <span class="text-muted">le {{ comment.createdAt|date('d/m/Y H:i') }}</span>
+            <p>{{ comment.content }}</p>
+        </div>
+    {% else %}
+        <p>Aucun commentaire pour l'instant.</p>
+    {% endfor %}
+</div>

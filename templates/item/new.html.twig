@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New Item{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="example-wrapper">
+            {% if is_granted('ROLE_ADMIN') %}
+                <h1 class="display-4">Create new Item</h1>
+
+                {{ form_start(form) }}
+                {{ form_widget(form) }}
+                <div class="example-wrapper mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        Save <i class="fa-solid fa-floppy-disk"></i>
+                    </button>
+                    <a class="btn btn-primary ms-2" href="{{ path('app_item_index') }}">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                </div>
+                {{ form_end(form) }}
+
+            {% else %}
+                <div class="alert alert-danger" role="alert">
+                    <h1 class="display-4">Accès refusé</h1>
+                    <p>Seul les administrateurs peuvent accéder à cette page.</p>
+                    <a class="btn btn-primary" href="{{ path('app_video_index') }}">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

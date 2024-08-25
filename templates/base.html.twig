@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Welcome!{% endblock %}</title>
+    <link rel="icon" href="/path/to/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    {% block stylesheets %}
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+        {{ encore_entry_link_tags('app') }}
+    {% endblock %}
+    <style>
+        /* Custom styles for responsive sidebar */
+        #sidebar-wrapper {
+            width: 250px;
+            transition: all 0.3s;
+            background-color: #f8f9fa;
+            height: 100vh; /* Ensure the sidebar takes full height */
+            overflow: hidden; /* Prevent scrolling inside the sidebar */
+        }
+
+        #sidebar-wrapper.collapsed {
+            width: 80px; /* Réduire la largeur mais afficher les icônes */
+        }
+
+        #sidebar-wrapper.collapsed .list-group-item {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        #sidebar-wrapper.collapsed .list-group-item .fa-solid {
+            font-size: 1.5rem; /* Agrandir les icônes pour qu'elles soient plus visibles */
+        }
+
+        #sidebar-wrapper.collapsed .list-group-item span {
+            display: none; /* Masquer le texte mais afficher les icônes */
+        }
+
+        #page-content-wrapper {
+            flex: 1;
+            transition: all 0.3s;
+            padding: 20px;
+            padding-top: 70px; /* Ajustez cette valeur en fonction de la hauteur de votre navbar */
+        }
+
+        #menu-toggle {
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+        }
+
+        .navbar-nav .nav-item {
+            margin-left: 1rem;
+        }
+
+        .navbar-search-wrapper {
+            max-width: 600px;
+            width: 100%;
+            position: absolute; /* Fixe la barre de recherche */
+            top: 50%; /* Centrage vertical approximatif */
+            left: 50%; /* Centrage horizontal */
+            transform: translate(-50%, -50%); /* Ajustement de l'alignement */
+        }
+
+        /* Style for search bar */
+        .navbar-search .input-group {
+            width: 100%;
+        }
+
+        /* Hide the sidebar on small screens */
+        @media (max-width: 768px) {
+            #sidebar-wrapper {
+                width: 250px;
+                margin-left: -250px;
+            }
+
+            #sidebar-wrapper.collapsed {
+                margin-left: 0;
+            }
+
+            .navbar-search-wrapper {
+                max-width: 100%;
+                margin: 0 auto;
+                position: relative; /* Revenir à la position relative sur petits écrans */
+                top: auto; /* Réinitialiser le top */
+                left: auto; /* Réinitialiser le left */
+                transform: none; /* Réinitialiser la transformation */
+            }
+
+            .navbar-nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .dropdown-menu {
+                position: static; /* Assure que le dropdown est affiché correctement sur les petits écrans */
+            }
+        }
+
+        /* Style for search results */
+        #search-results {
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            padding: 10px;
+            display: none;
+            position: absolute;
+            z-index: 1000;
+            width: 100%;
+            top: 100%; /* Assure que les résultats s'affichent sous la barre de recherche */
+            left: 0;
+        }
+
+        #user-container, #video-container {
+            margin-bottom: 10px;
+        }
+
+        .search-result-item {
+            padding: 5px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Header/Navbar en haut -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+        <div id="menu-toggle" class="d-inline-block me-3">
+            <span class="navbar-toggler-icon"></span>
+        </div>
+        <a class="navbar-brand" href="{{ path('app_video_index') }}">Symfony</a>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <!-- Placeholder to help center the search bar -->
+            </ul>
+
+            <form class="navbar-search-wrapper mx-auto">
+                <div class="input-group">
+                    <input type="text" id="search-input" class="form-control" placeholder="Rechercher des utilisateurs ou des vidéos...">
+                    <button id="search-button" class="btn btn-primary">Recherche</button>
+                </div>
+                <div id="search-results">
+                    <div id="user-container"></div>
+                    <div id="video-container"></div>
+                </div>
+            </form>
+
+            <ul class="navbar-nav ms-auto">
+                {% if app.user %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfil" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Profil
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownProfil">
+                            <li><a class="dropdown-item" href="{{ path('app_user_profile', {'id': app.user.id}) }}">Mon Compte</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">Se déconnecter</a></li>
+                        </ul>
+                    </li>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ path('app_item_index') }}">Gestion items</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ path('app_video_index') }}">Gestion videos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ path('app_user_index') }}">Gestion users</a>
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAuth" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            S'identifier
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownAuth">
+                            <li><a class="dropdown-item" href="{{ path('app_login') }}">Se connecter</a></li>
+                            <li><a class="dropdown-item" href="{{ path('app_register') }}">S'inscrire</a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="d-flex" id="wrapper">
+    <!-- Sidebar (collapsible) -->
+    <div class="bg-light border-end" id="sidebar-wrapper">
+        <div class="sidebar-heading text-center py-4 primary-text fs-4 fw-bold text-uppercase border-bottom">Sidebar</div>
+        <div class="list-group list-group-flush my-3">
+            <a href="{{ path('app_video_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                <i class="fa-solid fa-house"></i> <span>Home</span>
+            </a>
+            <a href="{{ path('app_video_new') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                <i class="fa-solid fa-photo-film"></i> <span>Vidéos</span>
+            </a>
+            <a href="{{ path('app_user_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                <i class="fa-solid fa-users"></i> <span>Gestions des users</span>
+            </a>
+            {% if app.user %}
+                <a href="{{ path('app_user_profile', {'id': app.user.id}) }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                    <i class="fa-solid fa-user"></i> <span>Mon Compte</span>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+        {% block body %}{% endblock %}
+    </div>
+</div>
+
+<!-- Scripts -->
+{% block javascripts %}
+    <script src="jquery-3.6.0.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+
+{#    <script src="{{ asset('build/app.js') }}"></script>#}
+{% endblock %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar-wrapper');
+
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+        const userContainer = document.getElementById('user-container');
+        const videoContainer = document.getElementById('video-container');
+
+        searchInput.addEventListener('input', function() {
+            const query = searchInput.value.toLowerCase();
+
+            if (query.length > 2) {
+                fetch(`/search?query=${query}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        userContainer.innerHTML = '';
+                        videoContainer.innerHTML = '';
+
+                        if (data.users.length > 0) {
+                            data.users.forEach(user => {
+                                const userItem = document.createElement('div');
+                                userItem.className = 'search-result-item';
+                                userItem.innerHTML = `<a href="/users/${user.id}">${user.name}</a>`;
+                                userContainer.appendChild(userItem);
+                            });
+                        }
+
+                        if (data.videos.length > 0) {
+                            data.videos.forEach(video => {
+                                const videoItem = document.createElement('div');
+                                videoItem.className = 'search-result-item';
+                                videoItem.innerHTML = `<a href="/videos/${video.id}">${video.title}</a>`;
+                                videoContainer.appendChild(videoItem);
+                            });
+                        }
+
+                        searchResults.style.display = 'block';
+                    });
+            } else {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!searchResults.contains(event.target) && event.target !== searchInput) {
+                searchResults.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+</body>
+
+</html>

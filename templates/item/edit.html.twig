@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit Item{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="example-wrapper">
+
+            {% if is_granted('ROLE_ADMIN') %}
+                <h1 class="display-4">Edit Item</h1>
+                {% if form.vars.errors|length > 0 %}
+                    <div class="alert alert-danger">
+                        {% for error in form.vars.errors %}
+                            <p>{{ error.message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {{ form_start(form) }}
+                {{ form_widget(form) }}
+                <div class="example-wrapper mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        Save <i class="fa-solid fa-floppy-disk"></i>
+                    </button>
+                    <a class="btn btn-primary ms-2" href="{{ path('app_item_index') }}">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <form method="post" action="{{ path('app_item_delete', {'id': item.id}) }}" onsubmit="return confirm('Are you sure you want to delete this item?');" class="d-inline ms-2">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ item.id) }}">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+                {{ form_end(form) }}
+
+            {% else %}
+                <div class="alert alert-danger" role="alert">
+                    <h1 class="display-4">Accès refusé</h1>
+                    <p>Seul les administrateurs peuvent accéder à cette page.</p>
+                    <a class="btn btn-primary" href="{{ path('app_video_index') }}">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

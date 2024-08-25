@@ -1,0 +1,13 @@
+<!-- home/_user_list.html.twig -->
+{% for user in users %}
+    <div class="user-card">
+        <p>
+            <strong>Email:</strong>
+            <a href="{{ path('app_user_profile', {'id': user.id}) }}">
+                {{ user.email }}
+            </a>
+        </p>
+    </div>
+{% else %}
+    <p>Aucun utilisateur trouvé.</p>
+{% endfor %}

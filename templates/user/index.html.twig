@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}User index{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="example-wrapper">
+    <h1>User index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Email</th>
+                <th>Roles</th>
+                <th>Password</th>
+                {% if is_granted('ROLE_ADMIN') %}
+                <th>actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.roles ? user.roles|json_encode : '' }}</td>
+                <td>{{ user.password }}</td>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <td>
+                        <a class="btn btn-info" href="{{ path('app_user_show', {'id': user.id}) }}"><i class="fa-solid fa-eye"></i></a>
+                        <a class="btn btn-warning" href="{{ path('app_user_edit', {'id': user.id}) }}"><i class="fa-solid fa-pen-to-square"></i></a>
+                    </td>
+                {% else %}
+
+                {% endif %}
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="4">Aucun user trouvé</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+        {% if is_granted('ROLE_ADMIN') %}
+            <td>
+                <a class="btn btn-primary" href="{{ path('app_user_new') }}"><i class="fa-solid fa-plus"></i></a>
+                <a class="btn btn-primary" href="{{ path('app_video_index') }}"><i class="fa-solid fa-arrow-left"></i></a>
+            </td>
+        {% else %}
+            <a class="btn btn-primary" href="{{ path('app_video_index') }}">Retour à l'accueil</a>
+        {% endif %}
+{% endblock %}

@@ -1,0 +1,106 @@
+{# templates/profile/index.html.twig #}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Profil de {{ user.username }}{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="row">
+            <!-- Section Profil -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header" style="background-image: url('https://via.placeholder.com/800x200'); background-size: cover; background-position: center;">
+                        <img src="https://via.placeholder.com/150" alt="User Avatar" class="rounded-circle img-thumbnail mx-auto d-block mt-4" style="width: 150px; height: 150px;">
+                    </div>
+                    <div class="card-body text-center">
+                        <h3>{{ user.username }}</h3>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                        <p><strong>Rôles:</strong>
+                            {% if user.roles is iterable %}
+                                {% for role in user.roles %}
+                                    {{ role }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                {{ user.roles }}
+                            {% endif %}
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Détails -->
+            <div class="col-md-8">
+                <!-- Statistiques de l'utilisateur -->
+                <div class="card mb-4">
+                    <div class="card-body text-center">
+                        <div class="row">
+                            <div class="col">
+                                <h4>{{ videos|length }}</h4>
+                                <p>Vidéos postées</p>
+                            </div>
+                            <div class="col">
+                                <h4>{{ comments|length }}</h4>
+                                <p>Commentaires</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Les vidéos postées -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h4>Vidéos postées</h4>
+                        <ul class="list-group">
+                            {% for video in videos %}
+                                <li class="list-group-item">
+                                    <a href="{{ path('app_video_show', { 'id': video.id }) }}">
+                                        {{ video.title }}
+                                    </a>
+                                    <small class="text-muted d-block">Ajoutée le {{ video.createdAt|date('d/m/Y H:i') }}</small>
+                                </li>
+                            {% else %}
+                                <p class="text-muted">Aucune vidéo postée pour le moment.</p>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Les commentaires postés -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h4>Commentaires</h4>
+                        <ul class="list-group">
+                            {% for comment in comments %}
+                                <li class="list-group-item">
+                                    <p>{{ comment.content }}</p>
+                                    <small class="text-muted d-block">Commenté sur
+                                        <a href="{{ path('app_video_show', { 'id': comment.video.id }) }}">
+                                            {{ comment.video.title }}
+                                        </a> le {{ comment.createdAt|date('d/m/Y H:i') }}
+                                    </small>
+                                </li>
+                            {% else %}
+                                <p class="text-muted">Aucun commentaire posté pour le moment.</p>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                {% if canEdit %}
+                    <!-- Lien pour modifier le profil -->
+                    <div class="text-center mb-4">
+                        <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-primary">Modifier le Profil</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% for label, type in app.flashes %}
+        <div class="alert alert-{{ type }}">
+            {{ label|raw }}
+        </div>
+    {% endfor %}
+{% endblock %}

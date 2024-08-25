@@ -1,0 +1,9 @@
+{{ form_start(form, {'attr': {'class': 'form-horizontal'}}) }}
+    {% for field in form %}
+        <div class="form-group mb-3">
+            {{ form_label(field, null, {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(field, {'attr': {'class': 'form-control'}}) }}
+        </div>
+    {% endfor %}
+<button class="btn btn-primary">{{ button_label|default('Save') }}</button>
+{{ form_end(form) }}

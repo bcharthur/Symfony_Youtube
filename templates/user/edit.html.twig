@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h1 class="display-4 mb-4">Edit User</h1>
+
+                {% if form.vars.errors|length > 0 %}
+                    <div class="alert alert-danger">
+                        {% for error in form.vars.errors %}
+                            <p>{{ error.message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {{ form_start(form, {'attr': {'class': 'form-horizontal'}}) }}
+                {% for field in form %}
+                    <div class="form-group mb-3">
+                        {{ form_label(field, null, {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(field, {'attr': {'class': 'form-control'}}) }}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">
+                    Save <i class="fa-solid fa-floppy-disk"></i>
+                </button>
+                <a class="btn btn-secondary ms-2" href="{{ path('app_user_profile', {'id': user.id}) }}">
+                    <i class="fa-solid fa-arrow-left"></i> Back to profile
+                </a>
+                <form method="post" action="{{ path('app_user_delete', {'id': user.id}) }}" onsubmit="return confirm('Are you sure you want to delete this user?');" class="d-inline ms-2">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </button>
+                </form>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

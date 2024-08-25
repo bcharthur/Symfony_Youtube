@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la vidéo{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h1 class="mb-4">Modifier la vidéo</h1>
+
+                {{ form_start(form, {'attr': {'class': 'form-horizontal'}}) }}
+                <div class="form-group mb-3">
+                    {{ form_label(form.title, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.title, {'attr': {'class': 'form-control'}}) }}
+                </div>
+                <button class="btn btn-primary">Enregistrer</button>
+                {{ form_end(form) }}
+
+                <a href="{{ path('app_video_show', {'id': video.id}) }}" class="btn btn-secondary mt-3">Retour</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
