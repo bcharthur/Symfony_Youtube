@@ -81,11 +81,11 @@
 
                             <div class="card mt-4">
                                 <div class="card-header">
-                                    <button class="btn btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#commentsCollapse" aria-expanded="true" aria-controls="commentsCollapse">
+                                    <button class="btn btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#commentsCollapse" aria-expanded="false" aria-controls="commentsCollapse">
                                         Voir les commentaires
                                     </button>
                                 </div>
-                                <div id="commentsCollapse" class="collapse show">
+                                <div id="commentsCollapse" class="collapse">
                                     <div class="card-body" id="comments-list">
                                         {% for comment in comments %}
                                             <div class="media mb-3 border rounded p-3 bg-light">
@@ -102,10 +102,10 @@
                                         {% else %}
                                             <p>Aucun commentaire pour l'instant.</p>
                                         {% endfor %}
-
                                     </div>
                                 </div>
                             </div>
+
                         </div>
 
                     </div>
