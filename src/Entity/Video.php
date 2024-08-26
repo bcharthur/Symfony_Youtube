@@ -31,6 +31,10 @@ class Video
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
 
+    #[ORM\ManyToOne(targetEntity: Categorie::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Categorie $categorie = null;
+
     #[ORM\OneToMany(targetEntity: Like::class, mappedBy: 'video', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $likes;
 
@@ -161,4 +165,16 @@ class Video
 
         return $this;
     }
+
+    public function getCategorie(): ?Categorie
+    {
+        return $this->categorie;
+    }
+
+    public function setCategorie(?Categorie $categorie): void
+    {
+        $this->categorie = $categorie;
+    }
+
+
 }

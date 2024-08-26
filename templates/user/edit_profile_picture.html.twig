@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la photo de profil{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h1 class="h3 mb-4">Modifier la photo de profil</h1>
+
+                {{ form_start(form, {'attr': {'class': 'form-horizontal', 'id': 'edit-profile-picture-form'}}) }}
+
+                <div class="form-group mb-3">
+                    {{ form_label(form.profilePictureFile, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.profilePictureFile, {'attr': {'class': 'form-control', 'id': form.profilePictureFile.vars.name}}) }}
+
+                    {% if form.profilePictureFile.vars.errors|length > 0 %}
+                        <small id="{{ form.profilePictureFile.vars.name }}-error" class="form-text text-danger">
+                            {% for error in form.profilePictureFile.vars.errors %}
+                                {{ error.message }}
+                            {% endfor %}
+                        </small>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submit-btn">Enregistrer <i class="fa-solid fa-floppy-disk"></i></button>
+                <a class="btn btn-secondary ms-2" href="{{ path('app_user_profile', {'id': user.id}) }}">
+                    <i class="fa-solid fa-arrow-left"></i> Retour au profil
+                </a>
+
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

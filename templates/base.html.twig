@@ -15,10 +15,14 @@
         /* Custom styles for responsive sidebar */
         #sidebar-wrapper {
             width: 250px;
-            transition: all 0.3s;
+            transition: width 0.3s;
             background-color: #f8f9fa;
-            height: 100vh; /* Ensure the sidebar takes full height */
-            overflow: hidden; /* Prevent scrolling inside the sidebar */
+            height: 100vh;
+            position: fixed; /* Fixer la sidebar */
+            top: 0;
+            left: 0;
+            overflow-x: hidden; /* Empêcher le défilement horizontal */
+            z-index: 2; /* Assurer que la sidebar est au-dessus des autres éléments */
         }
 
         #sidebar-wrapper.collapsed {
@@ -50,6 +54,7 @@
             font-size: 1.5rem;
         }
 
+
         .navbar-brand {
             font-size: 1.5rem;
         }
@@ -72,35 +77,40 @@
             width: 100%;
         }
 
-        /* Hide the sidebar on small screens */
+        /* Sidebar behavior on small screens */
         @media (max-width: 768px) {
             #sidebar-wrapper {
-                width: 250px;
-                margin-left: -250px;
+                width: 80px; /* Réduire la largeur pour ne montrer que les icônes */
+                margin-left: 0; /* Garder la sidebar visible */
+                transition: margin-left 0.3s;
             }
 
             #sidebar-wrapper.collapsed {
-                margin-left: 0;
+                margin-left: -80px; /* Masquer la sidebar, ne montrant que les icônes */
             }
 
-            .navbar-search-wrapper {
-                max-width: 100%;
-                margin: 0 auto;
-                position: relative; /* Revenir à la position relative sur petits écrans */
-                top: auto; /* Réinitialiser le top */
-                left: auto; /* Réinitialiser le left */
-                transform: none; /* Réinitialiser la transformation */
+            /* Adjustments for collapsed sidebar on small screens */
+            #sidebar-wrapper.collapsed .list-group-item {
+                text-align: center;
+                padding: 10px 0;
             }
 
-            .navbar-nav {
-                flex-direction: column;
-                align-items: flex-start;
+            #sidebar-wrapper.collapsed .list-group-item .fa-solid {
+                font-size: 1.5rem; /* Agrandir les icônes pour qu'elles soient plus visibles */
             }
 
-            .dropdown-menu {
-                position: static; /* Assure que le dropdown est affiché correctement sur les petits écrans */
+            #sidebar-wrapper.collapsed .list-group-item span {
+                display: none; /* Masquer le texte mais afficher les icônes */
             }
+
+            /* Adjust content area when sidebar is collapsed */
+            #page-content-wrapper {
+                margin-left: 80px; /* Ajuster le contenu pour laisser de la place pour la sidebar rétractée */
+            }
+
+
         }
+
 
         /* Style for search results */
         #search-results {
@@ -130,6 +140,12 @@
         .search-result-item:last-child {
             border-bottom: none;
         }
+
+        .dropdown-menu-custom {
+            z-index: 1050; /* Assurez-vous que ce z-index est suffisamment élevé */
+            position: absolute; /* Assurez-vous que la position est appropriée pour le z-index */
+        }
+
     </style>
 </head>
 
@@ -141,7 +157,12 @@
         <div id="menu-toggle" class="d-inline-block me-3">
             <span class="navbar-toggler-icon"></span>
         </div>
-        <a class="navbar-brand" href="{{ path('app_video_index') }}">Symfony</a>
+
+        {% if is_granted('ROLE_ADMIN') %}
+            <a class="navbar-brand" href="{{ path('app_video_index') }}">Symfony <strong>[ADMIN]</strong></a>
+        {% else %}
+            <a class="navbar-brand" href="{{ path('app_video_index') }}">Symfony</a>
+        {% endif %}
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
@@ -161,38 +182,35 @@
 
             <ul class="navbar-nav ms-auto">
                 {% if app.user %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfil" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Profil
+                    <div class="dropdown">
+                        <a class="list-group-item list-group-item-action bg-transparent second-text fw-bold dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-user"></i> <span>Mon Compte</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownProfil">
-                            <li><a class="dropdown-item" href="{{ path('app_user_profile', {'id': app.user.id}) }}">Mon Compte</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{{ path('app_user_profile', {'id': app.user.id}) }}">Profil</a></li>
                             <li><a class="dropdown-item" href="/logout">Se déconnecter</a></li>
+
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ path('app_item_index') }}">Gestion items</a></li>
+                                <li><a class="dropdown-item" href="{{ path('app_categorie_index') }}">Gestion categories</a></li>
+                                <li><a class="dropdown-item" href="{{ path('app_video_index') }}">Gestion vidéos</a></li>
+                                <li><a class="dropdown-item" href="{{ path('app_user_index') }}">Gestion utilisateurs</a></li>
+                            {% endif %}
                         </ul>
-                    </li>
-                    {% if is_granted('ROLE_ADMIN') %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ path('app_item_index') }}">Gestion items</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ path('app_video_index') }}">Gestion videos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ path('app_user_index') }}">Gestion users</a>
-                        </li>
-                    {% endif %}
+                    </div>
                 {% else %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAuth" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            S'identifier
+                    <div class="dropdown">
+                        <a class="list-group-item list-group-item-action bg-transparent second-text fw-bold dropdown-toggle" href="#" id="authDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-user"></i> Connexion
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownAuth">
+                        <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="authDropdown">
                             <li><a class="dropdown-item" href="{{ path('app_login') }}">Se connecter</a></li>
                             <li><a class="dropdown-item" href="{{ path('app_register') }}">S'inscrire</a></li>
                         </ul>
-                    </li>
+                    </div>
                 {% endif %}
+
             </ul>
         </div>
     </div>
@@ -200,7 +218,7 @@
 
 <div class="d-flex" id="wrapper">
     <!-- Sidebar (collapsible) -->
-    <div class="bg-light border-end" id="sidebar-wrapper">
+    <div class="bg-light border-end collapsed" id="sidebar-wrapper">
         <div class="sidebar-heading text-center py-4 primary-text fs-4 fw-bold text-uppercase border-bottom">Sidebar</div>
         <div class="list-group list-group-flush my-3">
             <a href="{{ path('app_video_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
@@ -210,53 +228,55 @@
                 <i class="fa-solid fa-photo-film"></i> <span>Vidéos</span>
             </a>
             {% if is_granted('ROLE_ADMIN') %}
-            <a href="{{ path('app_user_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
-                <i class="fa-solid fa-users"></i> <span>Gestions des users</span>
+                <a href="{{ path('app_user_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                    <i class="fa-solid fa-users"></i> <span>Gestions des users</span>
+                </a>
+            {% endif %}
+            <a>
+                {% if app.user %}
+                    <div class="dropdown">
+                        <a class="list-group-item list-group-item-action bg-transparent second-text fw-bold dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-user"></i> <span>Mon Compte</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-lg-end dropdown-menu-custom" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{{ path('app_user_profile', {'id': app.user.id}) }}">Profil</a></li>
+                            <li><a class="dropdown-item" href="/logout">Se déconnecter</a></li>
+
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ path('app_item_index') }}">Gestion items</a></li>
+                                <li><a class="dropdown-item" href="{{ path('app_video_index') }}">Gestion vidéos</a></li>
+                                <li><a class="dropdown-item" href="{{ path('app_user_index') }}">Gestion utilisateurs</a></li>
+                                <li><a class="dropdown-item" href="{{ path('app_categorie_index') }}">Gestion categories</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                {% else %}
+                    <div class="dropdown">
+                        <a class="list-group-item list-group-item-action bg-transparent second-text fw-bold dropdown-toggle" href="#" id="authDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-user"></i> <span>Connexion</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-lg-end dropdown-menu-custom" aria-labelledby="authDropdown">
+                            <li><a class="dropdown-item" href="{{ path('app_login') }}">Se connecter</a></li>
+                            <li><a class="dropdown-item" href="{{ path('app_register') }}">S'inscrire</a></li>
+                        </ul>
+                    </div>
+                {% endif %}
             </a>
-            {% endif %}
-
-
-            {% if app.user %}
-                <div class="dropdown">
-                    <a class="list-group-item list-group-item-action bg-transparent second-text fw-bold dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fa-solid fa-user"></i> Mon Compte
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="userDropdown">
-                        <li><a class="dropdown-item" href="{{ path('app_user_profile', {'id': app.user.id}) }}">Profil</a></li>
-                        <li><a class="dropdown-item" href="/logout">Se déconnecter</a></li>
-
-                        {% if is_granted('ROLE_ADMIN') %}
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ path('app_item_index') }}">Gestion items</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_video_index') }}">Gestion vidéos</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_user_index') }}">Gestion utilisateurs</a></li>
-                        {% endif %}
-                    </ul>
-                </div>
-            {% else %}
-                <div class="dropdown">
-                    <a class="list-group-item list-group-item-action bg-transparent second-text fw-bold dropdown-toggle" href="#" id="authDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fa-solid fa-user"></i> Connexion
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="authDropdown">
-                        <li><a class="dropdown-item" href="{{ path('app_login') }}">Se connecter</a></li>
-                        <li><a class="dropdown-item" href="{{ path('app_register') }}">S'inscrire</a></li>
-                    </ul>
-                </div>
-            {% endif %}
-
         </div>
     </div>
 
     <!-- Page Content -->
-    <div id="page-content-wrapper">
+    <div id="page-content-wrapper" style="margin-left: 80px">
         {% block body %}{% endblock %}
     </div>
 </div>
 
+
 <!-- Scripts -->
 {% block javascripts %}
-    <script src="jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
@@ -269,11 +289,41 @@
         const menuToggle = document.getElementById('menu-toggle');
         const sidebar = document.getElementById('sidebar-wrapper');
 
+        // document.getElementById('page-content-wrapper').style.marginLeft = '80px';
+
         menuToggle.addEventListener('click', function() {
+            // Toggle the sidebar
+            // console.log("collapsed");
             sidebar.classList.toggle('collapsed');
+
+            // Adjust page content margin when sidebar is collapsed
+            if (sidebar.classList.contains('collapsed')) {
+                document.getElementById('page-content-wrapper').style.marginLeft = '80px';
+                // console.log("uncollapsed");
+            } else {
+                document.getElementById('page-content-wrapper').style.marginLeft = '250px';
+            }
         });
 
-        // Search functionality
+        // Gérer la redimension de l'écran
+        window.addEventListener('resize', function() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.add('collapsed'); // Always collapse on small screens
+                document.getElementById('page-content-wrapper').style.marginLeft = '80px';
+            } else {
+                sidebar.classList.remove('collapsed');
+                document.getElementById('page-content-wrapper').style.marginLeft = '250px';
+            }
+        });
+
+        // Initial check on load
+        if (window.innerWidth <= 768) {
+            sidebar.classList.add('collapsed');
+            document.getElementById('page-content-wrapper').style.marginLeft = '80px';
+        }
+    });
+
+    // Search functionality
         const searchInput = document.getElementById('search-input');
         const searchResults = document.getElementById('search-results');
         const userContainer = document.getElementById('user-container');
@@ -318,7 +368,7 @@
             if (!searchResults.contains(event.target) && event.target !== searchInput) {
                 searchResults.style.display = 'none';
             }
-        });
+
     });
 </script>
 

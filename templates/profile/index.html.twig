@@ -8,12 +8,25 @@
             <!-- Section Profil -->
             <div class="col-md-4">
                 <div class="card">
-                    <div class="card-header" style="background-image: url('https://via.placeholder.com/800x200'); background-size: cover; background-position: center;">
-                        <img src="{{ user.profilePicture ? asset('uploads/profile_pictures/' ~ user.profilePicture) : 'https://via.placeholder.com/150' }}" alt="User Avatar" class="rounded-circle img-thumbnail mx-auto d-block mt-4" style="width: 150px; height: 150px;">
+                    <div class="card-header position-relative" style="padding: 0; overflow: hidden;">
+                        {% if user.profilePicture %}
+                            <div style="background-image: url('{{ asset('uploads/profile_pictures/' ~ user.profilePicture) }}'); background-size: cover; background-position: center; filter: blur(10px); height: 200px;"></div>
+                        {% else %}
+                            <div style="background-image: url('https://via.placeholder.com/800x200'); background-size: cover; background-position: center; filter: blur(10px); height: 200px;"></div>
+                        {% endif %}
+                        <img src="{{ user.profilePicture ? asset('uploads/profile_pictures/' ~ user.profilePicture) : 'https://via.placeholder.com/150' }}" alt="User Avatar" class="rounded-circle img-thumbnail mx-auto d-block position-absolute" style="width: 150px; height: 150px; top: 50%; left: 50%; transform: translate(-50%, -50%); object-fit: cover;">
+
+                        <!-- Icône de stylo -->
+                        {% if canEdit %}
+                            <a href="{{ path('app_user_edit_profile_picture', {'id': user.id}) }}" class="position-absolute" style="bottom: 10px; right: 10px; background: rgba(0, 0, 0, 0.6); padding: 5px; border-radius: 50%;">
+                                <i class="fa fa-pencil-alt text-white"></i>
+                            </a>
+                        {% endif %}
                     </div>
                     <div class="card-body text-center">
                         <h3>{{ user.username }}</h3>
                         <p><strong>Email:</strong> {{ user.email }}</p>
+                        {% if is_granted('ROLE_ADMIN') %}
                         <p><strong>Rôles:</strong>
                             {% if user.roles is iterable %}
                                 {% for role in user.roles %}
@@ -23,6 +36,7 @@
                                 {{ user.roles }}
                             {% endif %}
                         </p>
+                        {% endif %}
 
                     </div>
                 </div>

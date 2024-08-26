@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Form\RegistrationFormType;
+use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,14 +29,23 @@ class SecurityController extends AbstractController
         ]);
     }
 
+    // src/Controller/SecurityController.php
+
     #[Route(path: '/register', name: 'app_register')]
-    public function register(Request $request, UserPasswordHasherInterface $passwordHasher, EntityManagerInterface $entityManager): Response
+    public function register(Request $request, UserPasswordHasherInterface $passwordHasher, EntityManagerInterface $entityManager, UserRepository $userRepository): Response
     {
         $user = new User();  // Utilisation de la classe User correctement importée
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Générer un nom d'utilisateur unique
+            $username = 'user' . random_int(10000000, 99999999);
+            while ($userRepository->findOneBy(['username' => $username])) {
+                $username = 'user' . random_int(10000000, 99999999);
+            }
+            $user->setUsername($username);
+
             // Hachage du mot de passe
             $user->setPassword(
                 $passwordHasher->hashPassword(

@@ -1,3 +1,7 @@
+{#DERNIERERERERE  <a href="{{ path('app_user_profile', { 'id': video.user.id }) }}">{{ video.user.email }}</a>#}
+
+
+
 {# templates/video/show.html.twig #}
 {% extends 'base.html.twig' %}
 
@@ -13,19 +17,18 @@
                         Your browser does not support the video tag.
                     </video>
                     <div class="card-body">
-                        <h5 class="card-title">{{ video.title }}</h5>
-                        <p class="card-text">
-                            <small class="text-muted">Ajouté le {{ video.createdAt|date('d/m/Y H:i') }}</small><br>
-                            <small class="text-muted">
-                                Mise en ligne par :
-                                <a href="{{ path('app_user_profile', { 'id': video.user.id }) }}">{{ video.user.email }}</a>
-                            </small>
+                        <h5 class="card-title mb-3">{{ video.title }}</h5>
+                        <div class="d-flex align-items-center my-3">
+                            <img src="{{ video.user.profilePicture ? asset('uploads/profile_pictures/' ~ video.user.profilePicture) : 'https://via.placeholder.com/150' }}" alt="{{ video.user.username }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            <div>
+                                <a href="{{ path('app_user_profile', { 'id': video.user.id }) }}" class="text-decoration-none" style="font-size: 1.1rem; font-weight: 600;">
+                                    {{ video.user.username }}
+                                </a>
+                                <br>
+                                <small class="text-muted">Ajouté le {{ video.createdAt|date('d/m/Y H:i') }}</small>
+                            </div>
+                        </div>
 
-                        </p>
-
-{#                        <div class="d-flex align-items-center mt-3">#}
-
-{#                        </div>#}
 
                         <!-- Section de like/unlike -->
                         <div class="d-flex align-items-center mt-3">
@@ -55,8 +58,6 @@
                         <div id="error-message" class="alert alert-danger mt-3 d-none"></div>
 
 
-
-
                         <!-- Section des commentaires -->
                         <div class="mt-4">
 
@@ -65,18 +66,18 @@
 
                             {% else %}
 
-                            <h5>Commentaires</h5>
-                            <!-- Formulaire de commentaire -->
-                            {% if app.user %}
-                                <form id="comment-form" action="{{ path('app_video_comment', {'id': video.id}) }}" method="POST" class="mt-3">
-                                    <div class="mb-3">
-                                        <textarea name="content" class="form-control" placeholder="Ajouter un commentaire..." required></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Commenter</button>
-                                </form>
-                            {% else %}
-                                <p><a href="{{ path('app_login') }}">Connectez-vous</a> pour commenter.</p>
-                            {% endif %}
+                                <h5>Commentaires</h5>
+                                <!-- Formulaire de commentaire -->
+                                {% if app.user %}
+                                    <form id="comment-form" action="{{ path('app_video_comment', {'id': video.id}) }}" method="POST" class="mt-3">
+                                        <div class="mb-3">
+                                            <textarea name="content" class="form-control" placeholder="Ajouter un commentaire..." required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Commenter</button>
+                                    </form>
+                                {% else %}
+                                    <p><a href="{{ path('app_login') }}">Connectez-vous</a> pour commenter.</p>
+                                {% endif %}
                             {% endif %}
 
                             <div class="card mt-4">
@@ -86,9 +87,10 @@
                                     </button>
                                 </div>
                                 <div id="commentsCollapse" class="collapse">
-                                    <div class="card-body" id="comments-list">
+                                    <div id="comments-list">
                                         {% for comment in comments %}
-                                            <div class="media mb-3 border rounded p-3 bg-light">
+                                            <div class="media mb-3 border rounded p-3 bg-light d-flex">
+                                                <img src="{{ comment.user.profilePicture ? asset('uploads/profile_pictures/' ~ comment.user.profilePicture) : 'https://via.placeholder.com/150' }}" alt="User Avatar" class="rounded-circle img-thumbnail me-3" style="width: 50px; height: 50px; object-fit: cover;">
                                                 <div class="media-body">
                                                     <h6 class="mt-0">
                                                         <a href="{{ path('app_user_profile', { 'id': comment.user.id }) }}">
@@ -103,6 +105,7 @@
                                             <p>Aucun commentaire pour l'instant.</p>
                                         {% endfor %}
                                     </div>
+
                                 </div>
                             </div>
 

@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\Categorie;
 use App\Entity\Comment;
+use App\Entity\Item;
 use App\Entity\Like;
 use App\Entity\Video;
 use App\Form\CommentType;
@@ -11,6 +13,7 @@ use App\Repository\VideoRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,10 +31,15 @@ class VideoController extends AbstractController
     }
 
     #[Route('/', name: 'app_video_index', methods: ['GET'])]
-    public function index(VideoRepository $videoRepository): Response
+    public function index(VideoRepository $videoRepository, EntityManagerInterface $entityManager): Response
     {
+        $items = $entityManager->getRepository(Item::class)->findAll();
+        $categories = $entityManager->getRepository(Categorie::class)->findAll();
+
         return $this->render('video/index.html.twig', [
             'videos' => $videoRepository->findAll(),
+            'items' => $items,
+            'categories' => $categories,
         ]);
     }
 
@@ -84,7 +92,7 @@ class VideoController extends AbstractController
             $entityManager->persist($video);
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_home', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_video_index', [], Response::HTTP_SEE_OTHER);
         }
 
         return $this->render('video/new.html.twig', [
@@ -301,12 +309,4 @@ class VideoController extends AbstractController
             'createdAt' => $comment->getCreatedAt()->format('d/m/Y H:i'),
         ]);
     }
-
-
-
-
-
-
-
-
 }

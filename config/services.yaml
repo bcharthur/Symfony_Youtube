@@ -6,6 +6,7 @@
 parameters:
     videos_directory: '%kernel.project_dir%/public/media/video'
     thumbnails_directory: '%kernel.project_dir%/public/media/thumbnails'
+    profile_pictures_directory: '%kernel.project_dir%/public/uploads/profile_pictures'
 
 services:
     # default configuration for services in *this* file

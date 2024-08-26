@@ -3,11 +3,14 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Form\ProfilePictureType;
 use App\Form\UserType;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -23,14 +26,23 @@ class UserController extends AbstractController
         ]);
     }
 
+    // src/Controller/UserController.php
+
     #[Route('/new', name: 'app_user_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository): Response
     {
         $user = new User();
         $form = $this->createForm(UserType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Générer un nom d'utilisateur unique
+            $username = 'user' . random_int(10000000, 99999999);
+            while ($userRepository->findOneBy(['username' => $username])) {
+                $username = 'user' . random_int(10000000, 99999999);
+            }
+            $user->setUsername($username);
+
             $entityManager->persist($user);
             $entityManager->flush();
 
@@ -91,5 +103,55 @@ class UserController extends AbstractController
         }
 
         return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+
+    #[Route('/check-username', name: 'app_check_username', methods: ['POST'])]
+    public function checkUsername(Request $request, UserRepository $userRepository): JsonResponse
+    {
+        $username = $request->request->get('username');
+        $userExists = $userRepository->findOneBy(['username' => $username]) !== null;
+
+        return new JsonResponse(['exists' => $userExists]);
+    }
+
+
+    #[Route('/check-email', name: 'app_check_email', methods: ['POST'])]
+    public function checkEmail(Request $request, UserRepository $userRepository): JsonResponse
+    {
+        $email = $request->request->get('email');
+        $emailExists = $userRepository->findOneBy(['email' => $email]) !== null;
+
+        return new JsonResponse(['exists' => $emailExists]);
+    }
+
+    #[Route('/user/{id}/edit-profile-picture', name: 'app_user_edit_profile_picture', methods: ['GET', 'POST'])]
+    public function editProfilePicture(Request $request, User $user, EntityManagerInterface $entityManager): Response
+    {
+
+        $form = $this->createForm(ProfilePictureType::class, $user);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            /** @var UploadedFile $profilePictureFile */
+            $profilePictureFile = $form->get('profilePictureFile')->getData();
+
+            if ($profilePictureFile) {
+                $user->setProfilePictureFile($profilePictureFile);
+            }
+
+            // Flush the changes to the database
+            $entityManager->flush();
+
+            // Important: Unset the file to avoid serialization issues
+            $user->setProfilePictureFile(null);
+
+            return $this->redirectToRoute('app_user_profile', ['id' => $user->getId()], Response::HTTP_SEE_OTHER);
+        }
+
+        return $this->render('user/edit_profile_picture.html.twig', [
+            'user' => $user,
+            'form' => $form,
+        ]);
     }
 }

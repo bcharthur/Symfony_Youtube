@@ -4,44 +4,203 @@
 
 {% block body %}
 
-            <h1>Video index</h1>
-            <div class="mb-3">
-                <a href="{{ path('app_video_new') }}" class="btn btn-success">Ajouter une nouvelle vidéo</a>
-            </div>
+    <h1>Ajouter une vidéo</h1>
+    <div class="mb-3">
+        <a href="{{ path('app_video_new') }}" class="btn btn-success">Ajouter une nouvelle vidéo</a>
+    </div>
 
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5 g-4">
-                {% for video in videos %}
-                    <div class="col">
-                        <div class="card">
-                            <a href="{{ path('app_video_show', {'id': video.id}) }}">
-                                {% if video.thumbnailFilename %}
-                                    <img src="{{ asset('media/thumbnails/' ~ video.thumbnailFilename) }}" class="card-img-top" alt="{{ video.title }}">
-                                {% else %}
-                                    <img src="https://via.placeholder.com/320x180" class="card-img-top" alt="{{ video.title }}">
-                                {% endif %}
+    <h1>Catégorie index</h1>
+    <!-- Carrousel horizontal des boutons avec flèches de navigation -->
+    <div class="position-relative d-flex align-items-center mb-3">
+        <button id="scrollLeft" class="btn btn-outline-secondary position-absolute start-0 top-50 translate-middle-y z-index-1">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="categories-wrapper flex-grow-1 overflow-hidden ms-5 me-5">
+            <div id="categoryContainer" class="d-flex">
+                <!-- Conteneur pour les groupes de boutons -->
+                {% set chunkSize = 10 %}
+                {% for chunk in categories|batch(chunkSize) %}
+                    <div class="category-group d-flex flex-nowrap">
+                        {% for categorie in chunk %}
+                            <a class="btn btn-outline-secondary flex-fill" href="{{ path('app_categorie_show', {'id': categorie.id}) }}">
+                                {{ categorie.name }}
                             </a>
-                            <div class="card-body">
-                                <h5 class="card-title">{{ video.title }}</h5>
-                                <p class="card-text">
-                                    <small class="text-muted">Ajouté le {{ video.createdAt|date('d/m/Y H:i') }}</small><br>
-                                    <small class="text-muted">Mise en ligne par : {{ video.user.email }}</small>
-                                </p>
-                                {% if is_granted('ROLE_ADMIN') %}
-                                    <div>
-                                        <a class="btn btn-info" href="{{ path('app_video_show', {'id': video.id}) }}"><i class="fa-solid fa-eye"></i></a>
-                                        <a class="btn btn-warning" href="{{ path('app_video_edit', {'id': video.id}) }}"><i class="fa-solid fa-pen-to-square"></i></a>
-                                        <form method="post" action="{{ path('app_video_delete', {'id': video.id}) }}" onsubmit="return confirm('Are you sure you want to delete this video?');" class="d-inline">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ video.id) }}">
-                                            <button class="btn btn-danger"><i class="fa-solid fa-trash"></i></button>
-                                        </form>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
+                        {% endfor %}
                     </div>
-                {% else %}
-                    <p>Aucune vidéo disponible pour le moment.</p>
                 {% endfor %}
             </div>
+        </div>
+
+        <button id="scrollRight" class="btn btn-outline-secondary position-absolute end-0 top-50 translate-middle-y z-index-1">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <h1>Index vidéo</h1>
+    <!-- Liste des vidéos -->
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4 mt-4">
+        {% for video in videos %}
+            <div class="col">
+                <div class="card h-100">
+                    <a href="{{ path('app_video_show', {'id': video.id}) }}">
+                        {% if video.thumbnailFilename %}
+                            <img src="{{ asset('media/thumbnails/' ~ video.thumbnailFilename) }}" class="card-img-top img-fluid" alt="{{ video.title }}" style="height: 180px; object-fit: cover;">
+                        {% else %}
+                            <img src="https://via.placeholder.com/320x180" class="card-img-top img-fluid" alt="{{ video.title }}" style="height: 180px; object-fit: cover;">
+                        {% endif %}
+                    </a>
+                    <div class="card-body p-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <img src="{{ video.user.profilePicture ? asset('uploads/profile_pictures/' ~ video.user.profilePicture) : 'https://via.placeholder.com/50' }}" alt="User Avatar" class="rounded-circle me-2" style="width: 36px; height: 36px; object-fit: cover;">
+                            <h6 class="card-title mb-0 text-truncate">{{ video.title }}</h6>
+                        </div>
+                        <p class="card-text mb-1 text-muted" style="font-size: 0.9rem;">
+                            <small class="text-muted">Ajouté le {{ video.createdAt|date('d/m/Y H:i') }}</small><br>
+                            <small class="text-muted">Mise en ligne par :
+                                <a href="{{ path('app_user_profile', { 'id': video.user.id }) }}" class="text-decoration-none">
+                                    <strong>{{ video.user.username }}</strong>
+                                </a>
+{#                                {{ video.user.email }}#}
+                            </small>
+                            <small>
+                                Catégorie :
+                                <a href="{{ path('app_categorie_show', { 'id': video.categorie.id }) }}" class="text-decoration-none">
+                                    <strong>{{ video.categorie.name }}</strong>
+                                </a>
+                            </small>
+                        </p>
+                        {% if is_granted('ROLE_ADMIN') %}
+                            <div class="mt-auto d-flex justify-content-end">
+                                <a class="btn btn-info btn-sm me-1" href="{{ path('app_video_show', {'id': video.id}) }}"><i class="fa-solid fa-eye"></i></a>
+                                <a class="btn btn-warning btn-sm me-1" href="{{ path('app_video_edit', {'id': video.id}) }}"><i class="fa-solid fa-pen-to-square"></i></a>
+                                <form method="post" action="{{ path('app_video_delete', {'id': video.id}) }}" onsubmit="return confirm('Are you sure you want to delete this video?');" class="d-inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ video.id) }}">
+                                    <button class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p>Aucune vidéo disponible pour le moment.</p>
+        {% endfor %}
+    </div>
+
+    <style>
+        .btn-selected {
+            font-weight: bold;
+            border-color: #007bff; /* Couleur de la bordure du bouton sélectionné */
+            color: #007bff; /* Couleur du texte du bouton sélectionné */
+        }
+        .categories-wrapper {
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+        #categoryContainer {
+            display: flex;
+            transition: transform 0.3s ease;
+        }
+        .category-group {
+            display: flex;
+            flex: 1;
+            min-width: 100%;
+        }
+        .category-group button {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .btn-outline-secondary {
+            margin: 0;
+        }
+        /* Assure que le bouton de gauche et de droite sont bien positionnés */
+        #scrollLeft, #scrollRight {
+            z-index: 1;
+            padding: 0.5rem;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #scrollLeft {
+            left: 0;
+            position: absolute;
+        }
+        #scrollRight {
+            right: 0;
+            position: absolute;
+        }
+        /* Styles responsive */
+        @media (max-width: 576px) {
+            .category-group button {
+                font-size: 0.5rem;
+                padding: 0.2rem;
+            }
+            #scrollLeft, #scrollRight {
+                font-size: 0.8rem;
+                padding: 0.3rem;
+            }
+        }
+        @media (min-width: 577px) and (max-width: 768px) {
+            .category-group button {
+                font-size: 0.7rem;
+                padding: 0.3rem;
+            }
+            #scrollLeft, #scrollRight {
+                font-size: 0.9rem;
+                padding: 0.4rem;
+            }
+        }
+        @media (min-width: 769px) {
+            .category-group button {
+                font-size: 1rem;
+                padding: 0.5rem;
+            }
+            #scrollLeft, #scrollRight {
+                font-size: 1rem;
+                padding: 0.5rem;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollLeftBtn = document.getElementById('scrollLeft');
+            const scrollRightBtn = document.getElementById('scrollRight');
+            const categoryContainer = document.getElementById('categoryContainer');
+            const categoryGroups = Array.from(categoryContainer.getElementsByClassName('category-group'));
+
+            let currentGroupIndex = 0;
+
+            function updateButtons() {
+                scrollLeftBtn.disabled = currentGroupIndex === 0;
+                scrollRightBtn.disabled = currentGroupIndex === categoryGroups.length - 1;
+            }
+
+            function scrollLeft() {
+                if (currentGroupIndex > 0) {
+                    currentGroupIndex--;
+                    categoryContainer.style.transform = `translateX(-${currentGroupIndex * 100}%)`;
+                    updateButtons();
+                }
+            }
+
+            function scrollRight() {
+                if (currentGroupIndex < categoryGroups.length - 1) {
+                    currentGroupIndex++;
+                    categoryContainer.style.transform = `translateX(-${currentGroupIndex * 100}%)`;
+                    updateButtons();
+                }
+            }
+
+            scrollLeftBtn.addEventListener('click', scrollLeft);
+            scrollRightBtn.addEventListener('click', scrollRight);
+
+            // Initial display
+            updateButtons();
+        });
+    </script>
 
 {% endblock %}
