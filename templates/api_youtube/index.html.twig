@@ -1,0 +1,120 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}API YouTube Downloader{% endblock %}
+
+{% block body %}
+    <h1>API YouTube Downloader</h1>
+
+    <div class="mb-3">
+        <!-- Formulaire pour entrer un lien YouTube -->
+        <form id="youtube-form" method="post">
+            <div class="form-group">
+                <label for="youtube-link">Entrez le lien YouTube :</label>
+                <input id="youtube-link" name="youtube_link" class="form-control" placeholder="https://www.youtube.com/watch?v=example" required />
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Télécharger la vidéo</button>
+        </form>
+    </div>
+
+    <div id="progress-section" style="display:none;">
+        <h3>Progression du téléchargement :</h3>
+        <div class="progress">
+            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <ul id="download-progress" class="mt-3"></ul>
+    </div>
+
+    <table class="table mt-5">
+        <thead>
+        <tr>
+            <th>Id</th>
+            <th>Titre</th>
+            <th>Nom du fichier</th>
+            <th>Miniature</th>
+            <th>Date de création</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for video in videos %}
+            <tr>
+                <td>{{ video.id }}</td>
+                <td>{{ video.title }}</td>
+                <td>{{ video.filename }}</td>
+                <td>
+                    {% if video.thumbnailFilename %}
+                        <img src="{{ asset('media/thumbnails/' ~ video.thumbnailFilename) }}" alt="Thumbnail" width="100">
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>{{ video.createdAt ? video.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5">Aucune vidéo trouvée</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('youtube-form');
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    const youtubeLink = document.getElementById('youtube-link').value;
+
+                    // Reset progress
+                    const progressSection = document.getElementById('progress-section');
+                    const progressBar = document.getElementById('progress-bar');
+                    const progressList = document.getElementById('download-progress');
+
+                    progressSection.style.display = 'block';
+                    progressBar.style.width = '0%';
+                    progressBar.setAttribute('aria-valuenow', 0);
+                    progressList.innerHTML = '<li>Début du téléchargement...</li>';
+
+                    fetch('{{ path('app_api_youtube_download') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ links: [youtubeLink] })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'completed') {
+                                let progressValue = 0;
+                                const step = 100 / data.results.length;
+                                data.results.forEach((result, index) => {
+                                    setTimeout(() => {
+                                        if (result.status === 'success') {
+                                            progressValue += step;
+                                            progressBar.style.width = `${progressValue}%`;
+                                            progressBar.setAttribute('aria-valuenow', progressValue);
+                                            progressList.innerHTML += `<li>Succès: ${result.title} a été téléchargé.</li>`;
+                                        } else {
+                                            progressList.innerHTML += `<li>Erreur: Impossible de télécharger ${result.link} - ${result.message}</li>`;
+                                        }
+
+                                        if (index === data.results.length - 1) {
+                                            setTimeout(() => {
+                                                window.location.reload();
+                                            }, 1000);
+                                        }
+                                    }, 1000 * index);  // Progression animée
+                                });
+                            } else {
+                                progressList.innerHTML += `<li>Erreur: ${data.message}</li>`;
+                            }
+                        })
+                        .catch(error => {
+                            progressList.innerHTML += `<li>Erreur: ${error.message}</li>`;
+                        });
+                });
+            }
+        });
+    </script>
+{% endblock %}
