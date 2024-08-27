@@ -14,14 +14,25 @@
     "license": "UNLICENSED",
     "private": true,
     "scripts": {
-        "dev-server": "encore dev-server",
-        "dev": "encore dev",
-        "watch": "encore dev --watch",
-        "build": "encore production --progress"
+        "scrape-youtube": "node templates/api_youtube/scripts/scrap_youtube.js"
     },
     "dependencies": {
         "@symfony/stimulus-bridge": "^3.2.2",
+        "axios": "^1.7.5",
         "bootstrap": "^5.3.3",
-        "jquery": "^3.7.1"
-    }
+        "cheerio": "^1.0.0",
+        "jquery": "^3.7.1",
+        "webdriverio": "^9.0.7",
+        "ytdl-core": "^4.11.5",
+        "ytpl": "^2.3.0"
+    },
+    "name": "symfony_youtube",
+    "version": "1.0.0",
+    "description": "Config database in \".env\"",
+    "main": "webpack.config.js",
+    "directories": {
+        "test": "tests"
+    },
+    "keywords": [],
+    "author": ""
 }
