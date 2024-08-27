@@ -3,9 +3,9 @@
 {% block title %}New Video{% endblock %}
 
 {% block body %}
-<div class="container mt-5">
+    <div class="container mt-5">
 
-    <div class="row justify-content-center">
+        <div class="row justify-content-center">
 
             <div class="col-md-8">
                 <h1 class="mb-4">Create New Video</h1>
@@ -23,11 +23,15 @@
                     {{ form_label(form.thumbnailFile, null, {'label_attr': {'class': 'form-label'}}) }}
                     {{ form_widget(form.thumbnailFile, {'attr': {'class': 'form-control'}}) }}
                 </div>
+                <div class="form-group mb-3">
+                    {{ form_label(form.categorie, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.categorie, {'attr': {'class': 'form-control'}}) }}
+                </div>
                 <button class="btn btn-primary">{{ button_label|default('Save') }}</button>
                 {{ form_end(form) }}
 
                 <a href="{{ path('app_video_index') }}" class="btn btn-secondary mt-3">Back to list</a>
             </div>
+        </div>
     </div>
-</div>
 {% endblock %}
