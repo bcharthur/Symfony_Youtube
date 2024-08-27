@@ -283,11 +283,12 @@ class VideoController extends AbstractController
     #[Route('/{id}/comment', name: 'app_video_comment', methods: ['POST'])]
     public function comment(Request $request, Video $video, EntityManagerInterface $entityManager): JsonResponse
     {
-        if (!$this->getUser()) {
+        $user = $this->getUser();
+
+        if (!$user) {
             return new JsonResponse(['error' => 'Vous devez être connecté pour commenter.'], JsonResponse::HTTP_FORBIDDEN);
         }
 
-        // Récupération manuelle des données du formulaire
         $content = $request->request->get('content');
 
         if (empty($content)) {
@@ -295,7 +296,7 @@ class VideoController extends AbstractController
         }
 
         $comment = new Comment();
-        $comment->setUser($this->getUser());
+        $comment->setUser($user);
         $comment->setVideo($video);
         $comment->setContent($content);
         $comment->setCreatedAt(new \DateTime());
@@ -303,10 +304,13 @@ class VideoController extends AbstractController
         $entityManager->persist($comment);
         $entityManager->flush();
 
-        return $this->json([
-            'username' => $this->getUser()->getUsername(),
+        return new JsonResponse([
+            'userId' => $user->getId(),
+            'username' => $user->getUsername(),
+            'profilePicture' => $user->getProfilePicture() ? $this->generateUrl('app_user_profile', ['id' => $user->getId()]) : 'https://via.placeholder.com/150',
             'content' => $comment->getContent(),
             'createdAt' => $comment->getCreatedAt()->format('d/m/Y H:i'),
         ]);
     }
+
 }
