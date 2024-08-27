@@ -1,7 +1,11 @@
 <?php
+// src/Form/VideoType.php
+
 namespace App\Form;
 
+use App\Entity\Categorie;
 use App\Entity\Video;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -15,7 +19,15 @@ class VideoType extends AbstractType
         $isEdit = $options['is_edit'];
 
         $builder
-            ->add('title');
+            ->add('title')
+            ->add('categorie', EntityType::class, [
+                'class' => Categorie::class,
+                'choice_label' => 'name',
+                'placeholder' => 'Select a category',
+                'required' => true,
+                'label' => 'Category',
+                'attr' => ['class' => 'form-control']
+            ]);
 
         if (!$isEdit) {
             $builder
