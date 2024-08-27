@@ -227,42 +227,39 @@
             <a href="{{ path('app_video_new') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
                 <i class="fa-solid fa-photo-film"></i> <span>Vidéos</span>
             </a>
-            {% if is_granted('ROLE_ADMIN') %}
-                <a href="{{ path('app_user_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
-                    <i class="fa-solid fa-users"></i> <span>Gestions des users</span>
+            {% if app.user %}
+                {% if is_granted('ROLE_ADMIN') %}
+{#                    <a href="{{ path('app_video_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">#}
+{#                        <i class="fa-solid fa-video"></i> <span>Gestion vidéos</span>#}
+{#                    </a>#}
+                    <a href="{{ path('app_user_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                        <i class="fa-solid fa-user-gear"></i> <span>Gestion utilisateurs</span>
+                    </a>
+                    <a href="{{ path('app_item_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                        <i class="fa-solid fa-box"></i> <span>Gestions des items</span>
+                    </a>
+                    <a href="{{ path('app_categorie_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                        <i class="fa-solid fa-tags"></i> <span>Gestion catégories</span>
+                    </a>
+                    <a href="{{ path('app_api_youtube_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                        <i class="fa-solid fa-download"></i> <span>API download</span>
+                    </a>
+
+                    <a href="{{ path('app_user_profile', {'id': app.user.id}) }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                        <i class="fa-solid fa-user"></i> <span>Vous</span>
+                    </a>
+                {% endif %}
+            {% else %}
+                <a href="{{ path('app_login') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                    <i class="fa-solid fa-user"></i> <span>Connexion</span>
+                </a>
+                <a href="{{ path('app_login') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                    <i class="fa-solid fa-right-to-bracket"></i> <span>Se connecter</span>
+                </a>
+                <a href="{{ path('app_register') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                    <i class="fa-solid fa-user-plus"></i> <span>S'inscrire</span>
                 </a>
             {% endif %}
-            <a>
-                {% if app.user %}
-                    <div class="dropdown">
-                        <a class="list-group-item list-group-item-action bg-transparent second-text fw-bold dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-user"></i> <span>Mon Compte</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-lg-end dropdown-menu-custom" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_user_profile', {'id': app.user.id}) }}">Profil</a></li>
-                            <li><a class="dropdown-item" href="/logout">Se déconnecter</a></li>
-
-                            {% if is_granted('ROLE_ADMIN') %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ path('app_item_index') }}">Gestion items</a></li>
-                                <li><a class="dropdown-item" href="{{ path('app_video_index') }}">Gestion vidéos</a></li>
-                                <li><a class="dropdown-item" href="{{ path('app_user_index') }}">Gestion utilisateurs</a></li>
-                                <li><a class="dropdown-item" href="{{ path('app_categorie_index') }}">Gestion categories</a></li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                {% else %}
-                    <div class="dropdown">
-                        <a class="list-group-item list-group-item-action bg-transparent second-text fw-bold dropdown-toggle" href="#" id="authDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-user"></i> <span>Connexion</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-lg-end dropdown-menu-custom" aria-labelledby="authDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_login') }}">Se connecter</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_register') }}">S'inscrire</a></li>
-                        </ul>
-                    </div>
-                {% endif %}
-            </a>
         </div>
     </div>
 
