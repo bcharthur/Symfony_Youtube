@@ -43,12 +43,14 @@ class CategorieController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_categorie_show', methods: ['GET'])]
-    public function show(Categorie $categorie): Response
+    public function show(Categorie $categorie, CategorieRepository $categorieRepository): Response
     {
         return $this->render('categorie/show.html.twig', [
             'categorie' => $categorie,
+            'categories' => $categorieRepository->findAll(), // Ajoutez cette ligne pour passer les catégories au template
         ]);
     }
+
 
     #[Route('/{id}/edit', name: 'app_categorie_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Categorie $categorie, EntityManagerInterface $entityManager): Response

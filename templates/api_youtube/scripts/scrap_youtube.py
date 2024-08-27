@@ -37,9 +37,14 @@ def progress_hook(d):
         print(f"PROGRESS: 100%")
     sys.stdout.flush()
 
-def search_youtube(query, max_results=3):
-    search = VideosSearch(query, limit=max_results, language='fr')
-    results = search.result()['result']
+def search_youtube(query, max_results=10):
+    try:
+        search = VideosSearch(query, limit=max_results, language='fr')
+        results = search.result()['result']
+    except Exception as e:
+        print(f"ERROR: Error searching YouTube: {e}", file=sys.stderr)
+        return [], []
+
     video_ids = []
     filtered_results = []
 
@@ -60,7 +65,7 @@ def search_youtube(query, max_results=3):
             if len(video_ids) >= max_results:
                 break
         except Exception as e:
-            print(f"Error processing result {result['id']}: {e}", file=sys.stderr)
+            print(f"ERROR: Error processing result {result.get('id', 'unknown')}: {e}", file=sys.stderr)
 
     return video_ids, filtered_results
 
@@ -69,7 +74,7 @@ def get_video_info(video_id, category):
     video_path = f'{base_path}/{category}/media/video/{video_id}.mp4'
 
     if os.path.exists(video_path):
-        print(f"Video {video_id} already downloaded.")
+        print(f"INFO: Video {video_id} already downloaded.")
         return None
 
     ydl_opts = {
@@ -80,14 +85,13 @@ def get_video_info(video_id, category):
         'noplaylist': True,
         'retries': 5,
         'fragment-retries': 5,
-        'socket-timeout': 15,
-        'progress_hooks': [progress_hook],  # Utilisation correcte de progress_hook
+        'socket-timeout': 30,  # Augmentez le timeout du socket
+        'progress_hooks': [progress_hook],
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(url, download=True)
-
             video_info = {
                 "title": info_dict.get('title', None),
                 "filename": f'{video_id}.mp4',
@@ -97,29 +101,30 @@ def get_video_info(video_id, category):
                 "thumbnail_path": None,
             }
 
-        thumbnail_extensions = ['jpg', 'webp', 'png']
-        for ext in thumbnail_extensions:
-            thumbnail_path = f'{base_path}/{category}/media/video/{video_id}.{ext}'
-            if os.path.exists(thumbnail_path):
-                new_thumbnail_path = f'{base_path}/{category}/media/thumbnails/{video_id}.{ext}'
-                shutil.move(thumbnail_path, new_thumbnail_path)
-                video_info['thumbnail_filename'] = f'{video_id}.{ext}'
-                video_info['thumbnail_path'] = new_thumbnail_path
-                break
+            # Vérifier les fichiers de miniature
+            thumbnail_extensions = ['jpg', 'webp', 'png']
+            for ext in thumbnail_extensions:
+                thumbnail_path = f'{base_path}/{category}/media/video/{video_id}.{ext}'
+                if os.path.exists(thumbnail_path):
+                    new_thumbnail_path = f'{base_path}/{category}/media/thumbnails/{video_id}.{ext}'
+                    shutil.move(thumbnail_path, new_thumbnail_path)
+                    video_info['thumbnail_filename'] = f'{video_id}.{ext}'
+                    video_info['thumbnail_path'] = new_thumbnail_path
+                    break
 
-        return video_info
+            return video_info
 
     except yt_dlp.utils.DownloadError as e:
-        print(f"Failed to download video {video_id}. Error: {e}", file=sys.stderr)
+        print(f"ERROR: Failed to download video {video_id}. Error: {e}", file=sys.stderr)
         if os.path.exists(video_path):
             os.remove(video_path)
         return None
 
     except Exception as e:
-        print(f"Unexpected error occurred for video {video_id}. Error: {e}", file=sys.stderr)
+        print(f"ERROR: Unexpected error occurred for video {video_id}. Error: {e}", file=sys.stderr)
         return None
 
-def scrape_youtube_videos(query, category, max_results=3):
+def scrape_youtube_videos(query, category, max_results=10):
     video_ids, results = search_youtube(query, max_results)
     videos_data = []
 
@@ -137,7 +142,7 @@ sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
 
 all_videos_data = {}
 for category, query in categories.items():
-    all_videos_data[category] = scrape_youtube_videos(query, category, max_results=3)
+    all_videos_data[category] = scrape_youtube_videos(query, category, max_results=10)
 
 # Enregistrer les données JSON dans un fichier dans api/data
 try:

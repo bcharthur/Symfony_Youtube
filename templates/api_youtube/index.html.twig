@@ -8,6 +8,7 @@
             <h1 class="display-4">API YouTube Downloader</h1>
 
             <button id="scrape-youtube" class="btn btn-success mt-3">Scraper les vidéos YouTube</button>
+            <button id="import-videos" class="btn btn-primary mt-3">Importer les vidéos dans la base de données</button>
 
             <div id="progress-section" style="display:none;" class="mt-3">
                 <h3>Progression du téléchargement :</h3>
@@ -29,14 +30,36 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const scrapeButton = document.getElementById('scrape-youtube');
+            const importButton = document.getElementById('import-videos');
+            const progressSection = document.getElementById('progress-section');
+            const progressBar = document.getElementById('progress-bar');
+            const progressList = document.getElementById('download-progress');
+            const resultCard = document.getElementById('result-card');
+            const jsonResult = document.getElementById('json-result');
+
+            // Vérifier si le fichier JSON existe
+            fetch('/api/data/all_json_code.json')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Le fichier JSON n\'existe pas.');
+                    }
+                })
+                .then(data => {
+                    // Afficher le fichier JSON existant
+                    resultCard.style.display = 'block';
+                    jsonResult.textContent = JSON.stringify(data, null, 4);
+
+                    // Masquer la barre de progression et les erreurs
+                    progressSection.style.display = 'none';
+                })
+                .catch(error => {
+                    console.log('Aucun fichier JSON existant trouvé.');
+                });
+
             scrapeButton.addEventListener('click', function() {
                 console.log('Bouton cliqué, démarrage du scraping');
-
-                const progressSection = document.getElementById('progress-section');
-                const progressBar = document.getElementById('progress-bar');
-                const progressList = document.getElementById('download-progress');
-                const resultCard = document.getElementById('result-card');
-                const jsonResult = document.getElementById('json-result');
 
                 progressSection.style.display = 'block';
                 progressBar.style.width = '0%';
@@ -75,7 +98,11 @@
                                         if (text.includes("SUCCESS:")) {
                                             progressBar.style.width = '100%';
                                             progressBar.setAttribute('aria-valuenow', 100);
-                                            progressList.innerHTML += '<li>Scraping terminé avec succès!</li>';
+                                            progressList.innerHTML += '<li><strong>Scraping terminé avec succès!</strong></li>';
+
+                                            // Masquer les erreurs, la barre de progression et le texte "Progression du téléchargement :"
+                                            progressSection.style.display = 'none';
+
                                             resultCard.style.display = 'block';
                                             fetch('/api/data/all_json_code.json')
                                                 .then(response => response.json())
@@ -100,6 +127,26 @@
                     .catch(error => {
                         console.error('Erreur lors de l\'appel à l\'API', error);
                         progressList.innerHTML += `<li>Erreur: ${error.message}</li>`;
+                    });
+            });
+
+            importButton.addEventListener('click', function() {
+                console.log('Bouton cliqué, démarrage de l\'importation des vidéos');
+
+                fetch('{{ path('app_api_youtube_import') }}', {
+                    method: 'POST',
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Importation réussie : ' + data.success);
+                        } else if (data.error) {
+                            alert('Erreur lors de l\'importation : ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur lors de l\'appel à l\'API', error);
+                        alert('Erreur lors de l\'importation des vidéos');
                     });
             });
         });
