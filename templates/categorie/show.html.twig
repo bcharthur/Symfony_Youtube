@@ -4,6 +4,32 @@
 
 {% block body %}
 
+    <!-- Carrousel horizontal des boutons avec flèches de navigation -->
+    <div class="position-relative d-flex align-items-center mb-3">
+        <button id="scrollLeft" class="btn btn-outline-secondary position-absolute start-0 top-50 translate-middle-y z-index-1">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="categories-wrapper flex-grow-1 overflow-hidden ms-5 me-5">
+            <div id="categoryContainer" class="d-flex">
+                <!-- Conteneur pour les groupes de boutons -->
+                {% set chunkSize = 10 %}
+                {% for chunk in categories|batch(chunkSize) %}
+                    <div class="category-group d-flex flex-nowrap">
+                        {% for categorie in chunk %}
+                            <a class="btn btn-outline-secondary flex-fill" href="{{ path('app_categorie_show', {'id': categorie.id}) }}">
+                                {{ categorie.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button id="scrollRight" class="btn btn-outline-secondary position-absolute end-0 top-50 translate-middle-y z-index-1">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
             <h1 class="display-4">{{ categorie.name }}</h1>
 
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4 mt-4">
@@ -48,4 +74,119 @@
                 {% endfor %}
             </div>
 
+
+    <style>
+        .btn-selected {
+            font-weight: bold;
+            border-color: #007bff; /* Couleur de la bordure du bouton sélectionné */
+            color: #007bff; /* Couleur du texte du bouton sélectionné */
+        }
+        .categories-wrapper {
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+        #categoryContainer {
+            display: flex;
+            transition: transform 0.3s ease;
+        }
+        .category-group {
+            display: flex;
+            flex: 1;
+            min-width: 100%;
+        }
+        .category-group button {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .btn-outline-secondary {
+            margin: 0;
+        }
+        /* Assure que le bouton de gauche et de droite sont bien positionnés */
+        #scrollLeft, #scrollRight {
+            z-index: 1;
+            padding: 0.5rem;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #scrollLeft {
+            left: 0;
+            position: absolute;
+        }
+        #scrollRight {
+            right: 0;
+            position: absolute;
+        }
+        /* Styles responsive */
+        @media (max-width: 576px) {
+            .category-group button {
+                font-size: 0.5rem;
+                padding: 0.2rem;
+            }
+            #scrollLeft, #scrollRight {
+                font-size: 0.8rem;
+                padding: 0.3rem;
+            }
+        }
+        @media (min-width: 577px) and (max-width: 768px) {
+            .category-group button {
+                font-size: 0.7rem;
+                padding: 0.3rem;
+            }
+            #scrollLeft, #scrollRight {
+                font-size: 0.9rem;
+                padding: 0.4rem;
+            }
+        }
+        @media (min-width: 769px) {
+            .category-group button {
+                font-size: 1rem;
+                padding: 0.5rem;
+            }
+            #scrollLeft, #scrollRight {
+                font-size: 1rem;
+                padding: 0.5rem;
+            }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollLeftBtn = document.getElementById('scrollLeft');
+            const scrollRightBtn = document.getElementById('scrollRight');
+            const categoryContainer = document.getElementById('categoryContainer');
+            const categoryGroups = Array.from(categoryContainer.getElementsByClassName('category-group'));
+
+            let currentGroupIndex = 0;
+
+            function updateButtons() {
+                scrollLeftBtn.disabled = currentGroupIndex === 0;
+                scrollRightBtn.disabled = currentGroupIndex === categoryGroups.length - 1;
+            }
+
+            function scrollLeft() {
+                if (currentGroupIndex > 0) {
+                    currentGroupIndex--;
+                    categoryContainer.style.transform = `translateX(-${currentGroupIndex * 100}%)`;
+                    updateButtons();
+                }
+            }
+
+            function scrollRight() {
+                if (currentGroupIndex < categoryGroups.length - 1) {
+                    currentGroupIndex++;
+                    categoryContainer.style.transform = `translateX(-${currentGroupIndex * 100}%)`;
+                    updateButtons();
+                }
+            }
+
+            scrollLeftBtn.addEventListener('click', scrollLeft);
+            scrollRightBtn.addEventListener('click', scrollRight);
+
+            // Initial display
+            updateButtons();
+        });
+    </script>
 {% endblock %}

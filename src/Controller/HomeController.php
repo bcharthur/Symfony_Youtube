@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\CategorieRepository;
 use App\Repository\CommentRepository;
 use App\Repository\ItemRepository;
 use App\Repository\UserRepository;
@@ -22,18 +23,20 @@ class HomeController extends AbstractController
     }
 
     #[Route('/', name: 'app_home')]
-    public function index(ItemRepository $itemRepository, VideoRepository $videoRepository, CommentRepository $commentRepository, UserRepository $userRepository): Response
+    public function index(ItemRepository $itemRepository, VideoRepository $videoRepository, CommentRepository $commentRepository, UserRepository $userRepository, CategorieRepository $categorieRepository): Response
     {
         $items = $itemRepository->findAll();
         $videos = $videoRepository->findAll();
         $comments = $commentRepository->findAll();
         $users = $userRepository->findAll();
+        $categories = $categorieRepository->findAll();
 
         return $this->render('home/index.html.twig', [
             'items' => $items,
             'videos' => $videos,
             'comments' => $comments,
             'users' => $users,
+            'categories' => $categories,
         ]);
     }
 
