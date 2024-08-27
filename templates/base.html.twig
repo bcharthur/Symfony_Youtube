@@ -229,11 +229,11 @@
             </a>
             {% if app.user %}
                 {% if is_granted('ROLE_ADMIN') %}
+{#                    <a href="{{ path('app_video_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">#}
+{#                        <i class="fa-solid fa-video"></i> <span>Gestion vidéos</span>#}
+{#                    </a>#}
                     <a href="{{ path('app_user_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
                         <i class="fa-solid fa-user-gear"></i> <span>Gestion utilisateurs</span>
-                    </a>
-                    <a href="{{ path('app_video_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
-                        <i class="fa-solid fa-video"></i> <span>Gestion vidéos</span>
                     </a>
                     <a href="{{ path('app_item_index') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
                         <i class="fa-solid fa-box"></i> <span>Gestions des items</span>
