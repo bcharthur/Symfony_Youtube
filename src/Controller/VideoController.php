@@ -2,18 +2,18 @@
 
 namespace App\Controller;
 
-use App\Entity\Categorie;
+use App\Entity\Abonnement;
 use App\Entity\Comment;
-use App\Entity\Item;
 use App\Entity\Like;
+use App\Entity\User;
 use App\Entity\Video;
 use App\Form\CommentType;
 use App\Form\VideoType;
+use App\Repository\CategorieRepository;
 use App\Repository\VideoRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,19 +27,14 @@ class VideoController extends AbstractController
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
-
     }
 
     #[Route('/', name: 'app_video_index', methods: ['GET'])]
-    public function index(VideoRepository $videoRepository, EntityManagerInterface $entityManager): Response
+    public function index(VideoRepository $videoRepository, CategorieRepository $categorieRepository): Response
     {
-        $items = $entityManager->getRepository(Item::class)->findAll();
-        $categories = $entityManager->getRepository(Categorie::class)->findAll();
-
         return $this->render('video/index.html.twig', [
             'videos' => $videoRepository->findAll(),
-            'items' => $items,
-            'categories' => $categories,
+            'categories' => $categorieRepository->findAll(),
         ]);
     }
 
@@ -47,9 +42,7 @@ class VideoController extends AbstractController
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
         $video = new Video();
-        $form = $this->createForm(VideoType::class, $video, [
-            'is_edit' => false,
-        ]);
+        $form = $this->createForm(VideoType::class, $video);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -58,33 +51,14 @@ class VideoController extends AbstractController
             $thumbnailFile = $form->get('thumbnailFile')->getData();
 
             if ($videoFile) {
-                $originalFilename = pathinfo($videoFile->getClientOriginalName(), PATHINFO_FILENAME);
-                $newFilename = $originalFilename . '-' . uniqid() . '.' . $videoFile->guessExtension();
-
-                try {
-                    $videoFile->move(
-                        $this->getParameter('videos_directory'),
-                        $newFilename
-                    );
-                } catch (FileException $e) {
-                    throw new \Exception('Erreur lors de l\'upload du fichier');
-                }
-
+                $newFilename = pathinfo($videoFile->getClientOriginalName(), PATHINFO_FILENAME) . '-' . uniqid() . '.' . $videoFile->guessExtension();
+                $videoFile->move($this->getParameter('videos_directory'), $newFilename);
                 $video->setFilename($newFilename);
             }
 
             if ($thumbnailFile) {
                 $thumbnailFilename = uniqid() . '.' . $thumbnailFile->guessExtension();
-
-                try {
-                    $thumbnailFile->move(
-                        $this->getParameter('thumbnails_directory'),
-                        $thumbnailFilename
-                    );
-                } catch (FileException $e) {
-                    throw new \Exception('Erreur lors de l\'upload de la miniature');
-                }
-
+                $thumbnailFile->move($this->getParameter('thumbnails_directory'), $thumbnailFilename);
                 $video->setThumbnailFilename($thumbnailFilename);
             }
 
@@ -92,76 +66,12 @@ class VideoController extends AbstractController
             $entityManager->persist($video);
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_video_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_video_index');
         }
 
         return $this->render('video/new.html.twig', [
             'video' => $video,
             'form' => $form->createView(),
-        ]);
-    }
-
-    #[Route('/{id}', name: 'app_video_show', methods: ['GET', 'POST'])]
-    public function show(Video $video, VideoRepository $videoRepository, Request $request, EntityManagerInterface $entityManager): Response
-    {
-        // Gestion des commentaires
-        $comment = new Comment();
-        $commentForm = $this->createForm(CommentType::class, $comment);
-        $commentForm->handleRequest($request);
-
-        if ($commentForm->isSubmitted() && $commentForm->isValid()) {
-            $comment->setUser($this->getUser());
-            $comment->setVideo($video);
-            $comment->setCreatedAt(new \DateTime());
-
-            $entityManager->persist($comment);
-            $entityManager->flush();
-
-            if ($request->isXmlHttpRequest()) {  // Si c'est une requête AJAX
-                return $this->json([
-                    'username' => $this->getUser()->getUsername(),
-                    'content' => $comment->getContent(),
-                    'createdAt' => $comment->getCreatedAt()->format('d/m/Y H:i'),
-                ]);
-            }
-
-            return $this->redirectToRoute('app_video_show', ['id' => $video->getId()]);
-        }
-
-        // Trier les commentaires par date de création décroissante
-        $comments = $video->getComments()->toArray();
-        usort($comments, function ($a, $b) {
-            return $b->getCreatedAt() <=> $a->getCreatedAt();
-        });
-
-
-        $offset = $request->query->getInt('offset', 0);
-        $limit = 5;
-
-        $otherVideos = $videoRepository->createQueryBuilder('v')
-            ->where('v.id != :id')
-            ->setParameter('id', $video->getId())
-            ->orderBy('v.createdAt', 'DESC')
-            ->setFirstResult($offset)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-
-        $totalVideos = $videoRepository->createQueryBuilder('v')
-            ->select('COUNT(v.id)')
-            ->where('v.id != :id')
-            ->setParameter('id', $video->getId())
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        return $this->render('video/show.html.twig', [
-            'video' => $video,
-            'other_videos' => $otherVideos,
-            'offset' => $offset,
-            'limit' => $limit,
-            'total_videos' => $totalVideos,
-            'comment_form' => $commentForm->createView(),
-            'comments' => $comments,  // Ajoutez cette ligne
         ]);
     }
 
@@ -216,41 +126,92 @@ class VideoController extends AbstractController
         return $this->redirectToRoute('app_video_show', ['id' => $video->getId()]);
     }
 
+    #[Route('/{id}', name: 'app_video_show', methods: ['GET', 'POST'])]
+    public function show(Video $video, VideoRepository $videoRepository, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        // Gestion des commentaires
+        $comment = new Comment();
+        $commentForm = $this->createForm(CommentType::class, $comment);
+        $commentForm->handleRequest($request);
+
+        if ($commentForm->isSubmitted() && $commentForm->isValid()) {
+            $comment->setUser($this->getUser());
+            $comment->setVideo($video);
+            $comment->setCreatedAt(new \DateTime());
+
+            $entityManager->persist($comment);
+            $entityManager->flush();
+
+            if ($request->isXmlHttpRequest()) {
+                $profilePictureUrl = $this->getUser()->getProfilePicture()
+                    ? $this->getParameter('app') . '/uploads/profile_pictures/' . $this->getUser()->getProfilePicture()
+                    : 'https://via.placeholder.com/150';
+
+                return $this->json([
+                    'userId' => $this->getUser()->getId(),
+                    'username' => $this->getUser()->getUsername(),
+                    'profilePicture' => $profilePictureUrl,
+                    'content' => $comment->getContent(),
+                    'createdAt' => $comment->getCreatedAt()->format('d/m/Y H:i'),
+                ]);
+            }
+
+            return $this->redirectToRoute('app_video_show', ['id' => $video->getId()]);
+        }
+
+        $comments = $video->getComments()->toArray();
+        usort($comments, fn($a, $b) => $b->getCreatedAt() <=> $a->getCreatedAt());
+
+        // Récupération des autres vidéos
+        $offset = $request->query->getInt('offset', 0);
+        $limit = 5;
+        $otherVideos = $videoRepository->findBy([], ['createdAt' => 'DESC'], $limit, $offset);
+        $totalVideos = $videoRepository->count([]);
+
+        // Récupération des abonnements
+        $abonnementRepo = $entityManager->getRepository(Abonnement::class);
+        $isAbonne = $abonnementRepo->findOneBy(['abonne' => $this->getUser(), 'cible' => $video->getUser()]);
+        $abonnementsCount = $abonnementRepo->count(['cible' => $video->getUser()]);
+
+        return $this->render('video/show.html.twig', [
+            'video' => $video,
+            'other_videos' => $otherVideos,
+            'offset' => $offset,
+            'limit' => $limit,
+            'total_videos' => $totalVideos,
+            'comment_form' => $commentForm->createView(),
+            'comments' => $comments,
+            'abonnements' => $isAbonne ? [$isAbonne] : [],
+            'abonnements_count' => $abonnementsCount,
+        ]);
+    }
+
     #[Route('/{id}/like', name: 'app_video_like', methods: ['POST'])]
-    public function like(Request $request, Video $video, EntityManagerInterface $entityManager): JsonResponse
+    public function like(Video $video, EntityManagerInterface $entityManager): JsonResponse
     {
         $user = $this->getUser();
-
         if (!$user) {
             return new JsonResponse(['error' => 'Vous devez être connecté pour liker une vidéo.'], 403);
         }
 
         $likeRepository = $entityManager->getRepository(Like::class);
         $existingLike = $likeRepository->findOneBy(['video' => $video, 'user' => $user]);
+        $liked = false;
 
-        try {
-            $liked = false;
-
-            if ($existingLike) {
-                $entityManager->remove($existingLike);
-            } else {
-                $like = new Like();
-                $like->setVideo($video);
-                $like->setUser($user);
-                $entityManager->persist($like);
-                $liked = true;
-            }
-
-            $entityManager->flush();
-
-            $likesCount = $likeRepository->count(['video' => $video]);
-
-            return new JsonResponse(['likes_count' => $likesCount, 'liked' => $liked]);
-
-        } catch (\Exception $e) {
-            $this->get('logger')->error('Error handling like/unlike: ' . $e->getMessage());
-            return new JsonResponse(['error' => 'Une erreur est survenue lors du traitement de votre demande. Veuillez réessayer plus tard.'], 500);
+        if ($existingLike) {
+            $entityManager->remove($existingLike);
+        } else {
+            $like = new Like();
+            $like->setVideo($video);
+            $like->setUser($user);
+            $entityManager->persist($like);
+            $liked = true;
         }
+
+        $entityManager->flush();
+        $likesCount = $likeRepository->count(['video' => $video]);
+
+        return new JsonResponse(['likes_count' => $likesCount, 'liked' => $liked]);
     }
 
     #[Route('/{id}/load-more', name: 'app_video_load_more', methods: ['GET'])]
@@ -258,25 +219,15 @@ class VideoController extends AbstractController
     {
         $offset = $request->query->getInt('offset', 0);
         $limit = $request->query->getInt('limit', 5);
-
-        $otherVideos = $videoRepository->createQueryBuilder('v')
-            ->where('v.id != :id')
-            ->setParameter('id', $id)
-            ->orderBy('v.createdAt', 'DESC')
-            ->setFirstResult($offset)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+        $otherVideos = $videoRepository->findBy([], ['createdAt' => 'DESC'], $limit, $offset);
 
         return $this->json([
-            'videos' => array_map(function ($video) {
-                return [
-                    'id' => $video->getId(),
-                    'title' => $video->getTitle(),
-                    'createdAt' => $video->getCreatedAt()->format('d/m/Y H:i'),
-                    'thumbnail' => $video->getThumbnailFilename()
-                ];
-            }, $otherVideos)
+            'videos' => array_map(fn($video) => [
+                'id' => $video->getId(),
+                'title' => $video->getTitle(),
+                'createdAt' => $video->getCreatedAt()->format('d/m/Y H:i'),
+                'thumbnail' => $video->getThumbnailFilename()
+            ], $otherVideos)
         ]);
     }
 
@@ -304,13 +255,30 @@ class VideoController extends AbstractController
         $entityManager->persist($comment);
         $entityManager->flush();
 
+        $profilePictureUrl = $user->getProfilePicture()
+            ? $this->getParameter('app') . '/uploads/profile_pictures/' . $user->getProfilePicture()
+            : 'https://via.placeholder.com/150';
+
         return new JsonResponse([
             'userId' => $user->getId(),
             'username' => $user->getUsername(),
-            'profilePicture' => $user->getProfilePicture() ? $this->generateUrl('app_user_profile', ['id' => $user->getId()]) : 'https://via.placeholder.com/150',
+            'profilePicture' => $profilePictureUrl,
             'content' => $comment->getContent(),
             'createdAt' => $comment->getCreatedAt()->format('d/m/Y H:i'),
         ]);
     }
 
+    #[Route('/{id}/comments-count', name: 'app_video_comments_count', methods: ['GET'])]
+    public function getCommentsCount(Video $video, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $commentsCount = $entityManager->getRepository(Comment::class)->count(['video' => $video]);
+        return new JsonResponse(['comments_count' => $commentsCount]);
+    }
+
+    #[Route('/{id}/subscribers-count', name: 'app_video_subscribers_count', methods: ['GET'])]
+    public function getSubscribersCount(Video $video, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $subscribersCount = $entityManager->getRepository(Abonnement::class)->count(['cible' => $video->getUser()]);
+        return new JsonResponse(['subscribers_count' => $subscribersCount]);
+    }
 }

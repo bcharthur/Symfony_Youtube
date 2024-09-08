@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Abonnement;
 use App\Entity\User;
 use App\Form\ProfilePictureType;
 use App\Form\UserType;
@@ -125,7 +126,7 @@ class UserController extends AbstractController
         return new JsonResponse(['exists' => $emailExists]);
     }
 
-    #[Route('/user/{id}/edit-profile-picture', name: 'app_user_edit_profile_picture', methods: ['GET', 'POST'])]
+    #[Route('/{id}/edit-profile-picture', name: 'app_user_edit_profile_picture', methods: ['GET', 'POST'])]
     public function editProfilePicture(Request $request, User $user, EntityManagerInterface $entityManager): Response
     {
 
@@ -154,4 +155,46 @@ class UserController extends AbstractController
             'form' => $form,
         ]);
     }
+
+    #[Route('/{id}/abonnement', name: 'app_user_abonnement', methods: ['POST'])]
+    public function abonnement(User $cible, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $user = $this->getUser();
+
+        if (!$user) {
+            return new JsonResponse(['error' => 'Vous devez être connecté pour vous abonner.'], JsonResponse::HTTP_FORBIDDEN);
+        }
+
+        $abonnementRepo = $entityManager->getRepository(Abonnement::class);
+        $abonnement = $abonnementRepo->findOneBy(['abonne' => $user, 'cible' => $cible]);
+
+        if ($abonnement) {
+            // Désabonnement
+            $entityManager->remove($abonnement);
+            $entityManager->flush();
+            return new JsonResponse(['abonne' => false, 'subscribers_count' => $abonnementRepo->count(['cible' => $cible])]);
+        } else {
+            // Abonnement
+            $newAbonnement = new Abonnement();
+            $newAbonnement->setAbonne($user);
+            $newAbonnement->setCible($cible);
+            $entityManager->persist($newAbonnement);
+            $entityManager->flush();
+
+            return new JsonResponse(['abonne' => true, 'subscribers_count' => $abonnementRepo->count(['cible' => $cible])]);
+        }
+    }
+
+
+    #[Route('/{id}/abonnements', name: 'app_user_abonnements')]
+    public function viewAbonnements(User $user, EntityManagerInterface $entityManager): Response
+    {
+        $abonnements = $entityManager->getRepository(Abonnement::class)->findBy(['abonne' => $user]);
+
+        return $this->render('abonnement/index.html.twig', [
+            'abonnements' => $abonnements,
+            'user' => $user,
+        ]);
+    }
+
 }

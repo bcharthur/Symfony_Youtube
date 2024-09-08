@@ -26,6 +26,14 @@
                     <div class="card-body text-center">
                         <h3>{{ user.username }}</h3>
                         <p><strong>Email:</strong> {{ user.email }}</p>
+
+
+                        <!-- Lien vers les abonnements -->
+                        <a href="{{ path('app_user_abonnements', { 'id': user.id }) }}" class="btn btn-primary">
+                            Voir les abonnements
+                        </a>
+
+
                         {% if is_granted('ROLE_ADMIN') %}
                         <p><strong>Rôles:</strong>
                             {% if user.roles is iterable %}

@@ -7,21 +7,49 @@
         <div class="example-wrapper">
             <h1 class="display-4">API Scraper & Uploader</h1>
 
-            <button id="scrape-youtube" class="btn btn-success mt-3">Scraper les vidéos YouTube</button>
-            <button id="import-videos" class="btn btn-primary mt-3">Importer les vidéos dans la base de données</button>
+            <button id="scrape-youtube" class="btn btn-success mt-3"><i class="fa-solid fa-download"></i> Scraper les vidéos YouTube</button>
+            <button id="import-videos" class="btn btn-primary mt-3"><i class="fa-solid fa-upload"></i> Importer les vidéos en base</button>
+            <button id="view-script" class="btn btn-warning mt-3"><i class="fa-solid fa-code"></i> Voir le script</button>
+            <!-- Console Collapse -->
+            <a class="btn btn-info mt-3" data-bs-toggle="collapse" href="#collapseConsole" role="button" aria-expanded="false" aria-controls="collapseConsole">
+                <i class="fa-solid fa-terminal"></i> Console
+            </a>
 
             <div id="progress-section" style="display:none;" class="mt-3">
                 <h3>Progression du téléchargement :</h3>
-                <div class="progress">
-                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-                <ul id="download-progress" class="mt-3"></ul>
+                <ul id="download-progress-list" class="list-group"></ul>
             </div>
 
             <div id="result-card" class="card mt-3" style="display:none;">
                 <div class="card-body">
                     <h5 class="card-title">Résultat</h5>
                     <pre id="json-result"></pre>
+                </div>
+            </div>
+
+
+            <div class="collapse" id="collapseConsole">
+                <div class="card card-body">
+                    <pre id="console-log" style="height: 200px; overflow-y: scroll;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="scriptModal" tabindex="-1" aria-labelledby="scriptModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scriptModalLabel">Modifier le script</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="script-content" class="form-control" rows="20"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button type="button" id="save-script" class="btn btn-primary">Enregistrer</button>
                 </div>
             </div>
         </div>
@@ -32,12 +60,19 @@
             const scrapeButton = document.getElementById('scrape-youtube');
             const importButton = document.getElementById('import-videos');
             const progressSection = document.getElementById('progress-section');
-            const progressBar = document.getElementById('progress-bar');
-            const progressList = document.getElementById('download-progress');
+            const progressList = document.getElementById('download-progress-list');
             const resultCard = document.getElementById('result-card');
             const jsonResult = document.getElementById('json-result');
+            const viewScriptButton = document.getElementById('view-script');
+            const saveScriptButton = document.getElementById('save-script');
+            const consoleLog = document.getElementById('console-log');
 
-            // Vérifier si le fichier JSON existe
+            function logToConsole(message) {
+                consoleLog.textContent += message + '\n';
+                consoleLog.scrollTop = consoleLog.scrollHeight;  // Scroll to the bottom
+            }
+
+            // Vérifier si le fichier JSON existe à l'initialisation de la page
             fetch('/api/data/all_json_code.json')
                 .then(response => {
                     if (response.ok) {
@@ -55,16 +90,16 @@
                     progressSection.style.display = 'none';
                 })
                 .catch(error => {
-                    console.log('Aucun fichier JSON existant trouvé.');
+                    // Si le fichier JSON n'existe pas, afficher un message approprié
+                    resultCard.style.display = 'block';
+                    jsonResult.textContent = 'Aucun fichier JSON trouvé.';
                 });
 
             scrapeButton.addEventListener('click', function() {
-                console.log('Bouton cliqué, démarrage du scraping');
+                logToConsole('Bouton cliqué, démarrage du scraping');
 
                 progressSection.style.display = 'block';
-                progressBar.style.width = '0%';
-                progressBar.setAttribute('aria-valuenow', 0);
-                progressList.innerHTML = '<li>Début du scraping...</li>';
+                progressList.innerHTML = '';  // Réinitialiser la liste des téléchargements
                 resultCard.style.display = 'none';
                 jsonResult.textContent = '';
 
@@ -84,25 +119,50 @@
                                             return;
                                         }
                                         const text = new TextDecoder("utf-8").decode(value);
-                                        console.log('Received chunk', text);
+                                        logToConsole('Received chunk: ' + text);
 
                                         if (text.includes("PROGRESS:")) {
                                             const progressMatch = text.match(/PROGRESS: (\d+)%/);
                                             if (progressMatch) {
                                                 const progress = parseInt(progressMatch[1]);
+                                                const videoIndex = progressList.children.length;
+
+                                                let progressBar = document.getElementById(`progress-bar-${videoIndex}`);
+                                                if (!progressBar) {
+                                                    const listItem = document.createElement('li');
+                                                    listItem.className = 'list-group-item';
+
+                                                    const progressText = document.createElement('span');
+                                                    progressText.textContent = `Vidéo ${videoIndex + 1}`;
+
+                                                    progressBar = document.createElement('div');
+                                                    progressBar.id = `progress-bar-${videoIndex}`;
+                                                    progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated';
+                                                    progressBar.style.width = '0%';
+
+                                                    const progressDiv = document.createElement('div');
+                                                    progressDiv.className = 'progress';
+                                                    progressDiv.appendChild(progressBar);
+
+                                                    listItem.appendChild(progressText);
+                                                    listItem.appendChild(progressDiv);
+                                                    progressList.appendChild(listItem);
+                                                }
+
                                                 progressBar.style.width = progress + '%';
                                                 progressBar.setAttribute('aria-valuenow', progress);
                                             }
                                         }
 
                                         if (text.includes("SUCCESS:")) {
-                                            progressBar.style.width = '100%';
-                                            progressBar.setAttribute('aria-valuenow', 100);
+                                            const progressBars = document.querySelectorAll('.progress-bar');
+                                            progressBars.forEach(bar => {
+                                                bar.style.width = '100%';
+                                                bar.setAttribute('aria-valuenow', 100);
+                                            });
                                             progressList.innerHTML += '<li><strong>Scraping terminé avec succès!</strong></li>';
 
-                                            // Masquer les erreurs, la barre de progression et le texte "Progression du téléchargement :"
                                             progressSection.style.display = 'none';
-
                                             resultCard.style.display = 'block';
                                             fetch('/api/data/all_json_code.json')
                                                 .then(response => response.json())
@@ -113,6 +173,7 @@
 
                                         if (text.includes("ERROR:")) {
                                             progressList.innerHTML += `<li>Erreur: ${text}</li>`;
+                                            logToConsole(text);
                                         }
 
                                         controller.enqueue(value);
@@ -127,11 +188,12 @@
                     .catch(error => {
                         console.error('Erreur lors de l\'appel à l\'API', error);
                         progressList.innerHTML += `<li>Erreur: ${error.message}</li>`;
+                        logToConsole('Erreur: ' + error.message);
                     });
             });
 
             importButton.addEventListener('click', function() {
-                console.log('Bouton cliqué, démarrage de l\'importation des vidéos');
+                logToConsole('Bouton cliqué, démarrage de l\'importation des vidéos');
 
                 fetch('{{ path('app_api_youtube_import') }}', {
                     method: 'POST',
@@ -143,10 +205,49 @@
                         } else if (data.error) {
                             alert('Erreur lors de l\'importation : ' + data.error);
                         }
+                        logToConsole('Résultat importation: ' + JSON.stringify(data));
                     })
                     .catch(error => {
                         console.error('Erreur lors de l\'appel à l\'API', error);
                         alert('Erreur lors de l\'importation des vidéos');
+                        logToConsole('Erreur: ' + error.message);
+                    });
+            });
+
+            viewScriptButton.addEventListener('click', function() {
+                fetch('/api/youtube/get_script')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('script-content').value = data.script;
+                        new bootstrap.Modal(document.getElementById('scriptModal')).show();
+                    })
+                    .catch(error => {
+                        console.error('Erreur lors de la récupération du script', error);
+                        alert('Erreur lors de la récupération du script');
+                    });
+            });
+
+            saveScriptButton.addEventListener('click', function() {
+                const scriptContent = document.getElementById('script-content').value;
+                fetch('/api/youtube/save_script', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ script: scriptContent })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Script enregistré avec succès');
+                            new bootstrap.Modal(document.getElementById('scriptModal')).hide();
+                        } else {
+                            alert('Erreur lors de l\'enregistrement du script');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur lors de l\'enregistrement du script', error);
+                        alert('Erreur lors de l\'enregistrement du script');
                     });
             });
         });

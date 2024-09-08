@@ -1,138 +1,151 @@
-{#DERNIERERERERE  <a href="{{ path('app_user_profile', { 'id': video.user.id }) }}">{{ video.user.email }}</a>#}
-
-
-
-{# templates/video/show.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}{{ video.title }}{% endblock %}
 
 {% block body %}
-    <div class="container mt-5">
+    <div class="container-fluid mt-4">
         <div class="row">
-            <div class="col-lg-8">
-                <div class="card mb-4">
-                    <video class="card-img-top" id="video-player" controls autoplay muted>
-                        <source src="{{ asset('media/video/' ~ video.filename) }}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
+            <div class="col-lg-8 mb-4">
+                <div class="card mb-4" style="border: none;">
+                    <div class="video-container">
+                        <video id="video-player" controls autoplay muted>
+                            <source src="{{ asset('media/video/' ~ video.filename) }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
                     <div class="card-body">
                         <h5 class="card-title mb-3">{{ video.title }}</h5>
-                        <div class="d-flex align-items-center my-3">
-                            <img src="{{ video.user.profilePicture ? asset('uploads/profile_pictures/' ~ video.user.profilePicture) : 'https://via.placeholder.com/150' }}" alt="{{ video.user.username }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
-                            <div>
-                                <a href="{{ path('app_user_profile', { 'id': video.user.id }) }}" class="text-decoration-none" style="font-size: 1.1rem; font-weight: 600;">
-                                    {{ video.user.username }}
-                                </a>
-                                <br>
-                                <small class="text-muted">Ajouté le {{ video.createdAt|date('d/m/Y H:i') }}</small>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap">
+                            <div class="card flex-grow-1 me-3 mb-3">
+                                <div class="d-flex align-items-center p-3">
+                                    <img src="{{ video.user.profilePicture ? asset('uploads/profile_pictures/' ~ video.user.profilePicture) : 'https://via.placeholder.com/150' }}" alt="{{ video.user.username }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                    <div>
+                                        <a href="{{ path('app_user_profile', { 'id': video.user.id }) }}" class="text-decoration-none">{{ video.user.username }}</a>
+                                        <br>
+                                        <small class="text-muted">Ajouté le {{ video.createdAt|date('d/m/Y H:i') }}</small>
+
+
+                                    </div>
+                                </div>
+
                             </div>
-                        </div>
+<div>
+                            <!-- Bouton Like -->
+                            <form id="like-form" action="{{ path('app_video_like', { 'id': video.id }) }}" method="POST" class="d-inline">
+                                <button id="like-button" class="btn btn-outline-primary">
+                                    {% if app.user and video.likes.contains(app.user) %}
+                                        <i class="fa-solid fa-thumbs-up me-2"></i>  <span id="likes-count">{{ video.likes|length }}</span>
+                                    {% else %}
+                                        <i class="fa-regular fa-thumbs-up me-2"></i>  <span id="likes-count">{{ video.likes|length }}</span>
+                                    {% endif %}
+                                </button>
 
-
-                        <!-- Section de like/unlike -->
-                        <div class="d-flex align-items-center mt-3">
-
-                            {% if is_granted('ROLE_ADMIN') %}
-                                <a class="btn btn-primary me-2" href="{{ path('app_video_edit', {'id': video.id}) }}"><i class="fa-solid fa-pen-to-square"></i></a>
-
-                            {% else %}
-                                {% if app.user %}
-                                    <form id="like-form" action="{{ path('app_video_like', {'id': video.id}) }}" method="POST" class="d-inline">
-                                        {#                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('like_video') }}">#}
-                                        <button id="like-button" class="btn btn-outline-primary me-2 d-flex align-items-center" type="submit" disabled>
-                                            {% if video.likes|filter(v => v.user == app.user)|length > 0 %}
-                                                <i class="fa-solid fa-thumbs-up me-2"></i>
+                                <div id="like-loading" class="d-none mt-2">
+                                    <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                                </div>
+                            </form>
+</div>
+                            <div>
+                                <!-- Bouton d'abonnement -->
+                                {% if app.user and app.user != video.user %}
+                                    <form id="abonnement-form" action="{{ path('app_user_abonnement', { 'id': video.user.id }) }}" method="POST" class="d-inline">
+                                        <button id="abonnement-button" class="btn btn-outline-primary">
+                                            {% if abonnements|length > 0 %}
+                                                Se désabonner
                                             {% else %}
-                                                <i class="fa-regular fa-thumbs-up me-2"></i>
+                                                S'abonner
                                             {% endif %}
-                                            <span id="likes-count">{{ video.likes|length }}</span>
-                                            <span id="like-loading" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
                                         </button>
+                                        <span id="subscribers-count">({{ abonnements_count }}) abonnés</span>
                                     </form>
                                 {% endif %}
-                            {% endif %}
+
+                            </div>
+
                         </div>
 
-                        <!-- Section des erreurs -->
                         <div id="error-message" class="alert alert-danger mt-3 d-none"></div>
-
 
                         <!-- Section des commentaires -->
                         <div class="mt-4">
-
-                            {% if is_granted('ROLE_ADMIN') %}
-
-
-                            {% else %}
-
-                                <h5>Commentaires</h5>
-                                <!-- Formulaire de commentaire -->
-                                {% if app.user %}
-                                    <form id="comment-form" action="{{ path('app_video_comment', {'id': video.id}) }}" method="POST" class="mt-3">
-                                        <div class="mb-3">
-                                            <textarea name="content" class="form-control" placeholder="Ajouter un commentaire..." required></textarea>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary">Commenter</button>
-                                    </form>
-                                {% else %}
-                                    <p><a href="{{ path('app_login') }}">Connectez-vous</a> pour commenter.</p>
-                                {% endif %}
-                            {% endif %}
-
                             <div class="card mt-4">
                                 <div class="card-header">
-                                    <button class="btn btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#commentsCollapse" aria-expanded="false" aria-controls="commentsCollapse">
-                                        Voir les commentaires
-                                    </button>
+                                    <h5>Commentaires (<span id="comments-count">{{ comments|length }}</span>)</h5>
                                 </div>
-                                <div id="commentsCollapse" class="collapse">
-                                    <div id="comments-list">
+                                <div class="card-body">
+                                    {% if app.user %}
+                                        <form id="comment-form" action="{{ path('app_video_comment', {'id': video.id}) }}" method="POST" class="mt-3">
+                                            <div class="mb-3">
+                                                <textarea name="content" class="form-control" placeholder="Ajouter un commentaire..." required></textarea>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Commenter</button>
+                                            <!-- Ajout d'un indicateur de chargement -->
+                                            <div id="comment-loading" class="mt-3 d-none">
+                                                <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                                                Envoi du commentaire...
+                                            </div>
+                                        </form>
+
+                                    {% else %}
+                                        <p><a href="{{ path('app_login') }}">Connectez-vous</a> pour commenter.</p>
+                                    {% endif %}
+
+                                    <div id="comments-list" class="mt-4">
                                         {% for comment in comments %}
-                                            <div class="media mb-3 border rounded p-3 bg-light d-flex">
-                                                <img src="{{ comment.user.profilePicture ? asset('uploads/profile_pictures/' ~ comment.user.profilePicture) : 'https://via.placeholder.com/150' }}" alt="User Avatar" class="rounded-circle img-thumbnail me-3" style="width: 50px; height: 50px; object-fit: cover;">
-                                                <div class="media-body">
-                                                    <h6 class="mt-0">
-                                                        <a href="{{ path('app_user_profile', { 'id': comment.user.id }) }}">
-                                                            {{ comment.user.username }}
-                                                        </a>
-                                                        <small class="text-muted">{{ comment.createdAt|date('d/m/Y H:i') }}</small>
-                                                    </h6>
-                                                    <p>{{ comment.content }}</p>
+                                            <div class="card mb-3">
+                                                <div class="card-body d-flex">
+                                                    <img src="{{ comment.user.profilePicture ? asset('uploads/profile_pictures/' ~ comment.user.profilePicture) : 'https://via.placeholder.com/50' }}" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;">
+                                                    <div>
+                                                        <h6 class="mt-0">
+                                                            <a href="{{ path('app_user_profile', { 'id': comment.user.id }) }}">{{ comment.user.username }}</a>
+                                                            <small class="text-muted">{{ comment.createdAt|date('d/m/Y H:i') }}</small>
+                                                        </h6>
+                                                        <p>{{ comment.content }}</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         {% else %}
-                                            <p>Aucun commentaire pour l'instant.</p>
+                                            <p class="text-muted">Aucun commentaire pour l'instant.</p>
                                         {% endfor %}
                                     </div>
-
                                 </div>
                             </div>
-
                         </div>
-
                     </div>
                 </div>
             </div>
 
             <!-- Section des autres vidéos -->
-            <div class="col-lg-4">
+            <div class="col-lg-4 mb-4">
                 <h5>Autres vidéos</h5>
                 <div class="list-group" id="other-videos-list">
                     {% for other_video in other_videos %}
-                        <a href="{{ path('app_video_show', {'id': other_video.id}) }}" class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">{{ other_video.title }}</h6>
+                        <div class="card mb-3">
+                            <a href="{{ path('app_video_show', {'id': other_video.id}) }}" class="stretched-link"></a>
+                            <div class="row g-0">
+                                <div class="col-md-4">
+                                    {% if other_video.thumbnailFilename %}
+                                        <img src="{{ asset('media/thumbnails/' ~ other_video.thumbnailFilename) }}" class="card-img-top img-fluid" alt="{{ other_video.title }}" style="max-height: 110px; object-fit: cover;">
+                                    {% else %}
+                                        <img src="https://via.placeholder.com/320x180" class="card-img-top img-fluid" alt="{{ other_video.title }}" style="max-height: 110px; object-fit: cover;">
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card-body p-2">
+                                        <h6 class="card-title">{{ other_video.title }}</h6>
+                                        <small class="text-muted">Ajouté le {{ other_video.createdAt|date('d/m/Y H:i') }}</small>
+                                    </div>
+                                </div>
                             </div>
-                            <small>Ajouté le {{ other_video.createdAt|date('d/m/Y H:i') }}</small>
-                        </a>
+                        </div>
                     {% else %}
                         <p class="text-muted">Aucune autre vidéo disponible.</p>
                     {% endfor %}
                 </div>
 
                 {% if offset + limit < total_videos %}
-                    <button id="load-more-btn" class="btn btn-primary mt-3" data-offset="{{ offset + limit }}" data-limit="{{ limit }}">Afficher plus</button>
+                    <button id="load-more-btn" class="btn btn-primary mt-3" data-video-id="{{ video.id }}" data-offset="{{ offset + limit }}" data-limit="{{ limit }}">Afficher plus</button>
+
                 {% endif %}
             </div>
         </div>
@@ -142,156 +155,35 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const likeForm = document.getElementById('like-form');
-            const likeButton = document.getElementById('like-button');
-            const likesCountElem = document.getElementById('likes-count');
-            const loadingSpinner = document.getElementById('like-loading');
-            const errorMessage = document.getElementById('error-message');
-            const commentForm = document.getElementById('comment-form');
-            const commentsList = document.getElementById('comments-list');
+    <style>
+        .video-container {
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%;
+            background: #000;
+        }
 
-            likeButton.disabled = false;
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
 
-            function showError(message) {
-                errorMessage.textContent = message;
-                errorMessage.classList.remove('d-none');
-                console.error('Error:', message);
-            }
 
-            function hideError() {
-                errorMessage.classList.add('d-none');
-            }
+        <script src="{{ asset('js/video/comments.js') }}"></script>
+        <script src="{{ asset('js/video/likes.js') }}"></script>
+        <script src="{{ asset('js/video/abonnement.js') }}"></script>
+        <script src="{{ asset('js/video/other_videos.js') }}"></script>
 
-            function updateLikeButton(data) {
-                console.log('Like response data:', data);
-                likesCountElem.textContent = data.likes_count;
-                likeButton.innerHTML = data.liked
-                    ? `<i class="fa-solid fa-thumbs-up me-2"></i> ${data.likes_count}`
-                    : `<i class="fa-regular fa-thumbs-up me-2"></i> ${data.likes_count}`;
-            }
 
-            likeForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                loadingSpinner.classList.remove('d-none');
-                likeButton.disabled = true;
-                hideError();
 
-                console.log('Submitting like form...');
 
-                fetch(likeForm.action, {
-                    method: 'POST',
-                    body: new FormData(likeForm),
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                    .then(response => {
-                        console.log('Like form response status:', response.status);
-                        return response.json();
-                    })
-                    .then(data => {
-                        loadingSpinner.classList.add('d-none');
-                        likeButton.disabled = false;
-                        if (data.error) {
-                            showError(data.error);
-                        } else {
-                            updateLikeButton(data);
-                        }
-                    })
-                    .catch(error => {
-                        loadingSpinner.classList.add('d-none');
-                        likeButton.disabled = false;
-                        showError('Une erreur est survenue. Veuillez réessayer.');
-                        console.error('Like form error:', error);
-                    });
-            });
-
-            if (commentForm) {
-                commentForm.addEventListener('submit', function(event) {
-                    event.preventDefault();
-
-                    const formData = new FormData(commentForm);
-
-                    fetch(commentForm.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                        .then(response => {
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.error) {
-                                showError(data.error);
-                            } else {
-                                const newComment = document.createElement('div');
-                                newComment.className = 'media mb-3 border rounded p-3 bg-light';
-                                newComment.innerHTML = `
-                    <div class="media-body">
-                        <h6 class="mt-0">${data.username}
-                            <small class="text-muted">${data.createdAt}</small>
-                        </h6>
-                        <p>${data.content}</p>
-                    </div>
-                `;
-                                commentsList.prepend(newComment); // Ajouter en haut de la liste
-                                commentForm.reset();
-                            }
-                        })
-                        .catch(error => {
-                            showError('Erreur lors de l\'envoi du commentaire.');
-                            console.error('Comment form error:', error);
-                        });
-                });
-            }
-
-            document.getElementById('load-more-btn').addEventListener('click', function() {
-                const btn = this;
-                const offset = btn.getAttribute('data-offset');
-                const limit = btn.getAttribute('data-limit');
-
-                console.log('Loading more videos with offset:', offset, 'and limit:', limit);
-
-                fetch(`{{ path('app_video_load_more', {'id': video.id}) }}?offset=${offset}&limit=${limit}`, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                    .then(response => {
-                        console.log('Load more videos response status:', response.status);
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Load more videos response data:', data);
-                        const otherVideosList = document.getElementById('other-videos-list');
-                        data.videos.forEach(video => {
-                            const videoItem = document.createElement('a');
-                            videoItem.href = `/video/${video.id}`;
-                            videoItem.className = 'list-group-item list-group-item-action';
-                            videoItem.innerHTML = `
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">${video.title}</h6>
-                                </div>
-                                <small>Ajouté le ${video.createdAt}</small>
-                            `;
-                            otherVideosList.appendChild(videoItem);
-                        });
-
-                        if (data.hasMore) {
-                            btn.setAttribute('data-offset', parseInt(offset) + parseInt(limit));
-                        } else {
-                            btn.remove();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erreur lors du chargement des vidéos :', error);
-                    });
-            });
-        });
-    </script>
 {% endblock %}
