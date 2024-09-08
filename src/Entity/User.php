@@ -13,7 +13,6 @@ use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[UniqueEntity(fields: ['username'], message: 'Ce nom d\'utilisateur est déjà pris.')]
 #[UniqueEntity(fields: ['email'], message: 'Cette adresse email est déjà utilisée.')]
@@ -55,12 +54,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 255, unique: true)]
     private string $username;
 
+    #[ORM\OneToMany(targetEntity: Abonnement::class, mappedBy: 'abonne', cascade: ['persist', 'remove'])]
+    private Collection $abonnements;
+
     public function __construct()
     {
         $this->likes = new ArrayCollection();
         $this->videos = new ArrayCollection();
         $this->comments = new ArrayCollection();
         $this->roles = ['ROLE_USER'];
+        $this->abonnements = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -236,5 +239,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function isAbonne(User $cible): bool
+    {
+        foreach ($this->abonnements as $abonnement) {
+            if ($abonnement->getCible() === $cible) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 }

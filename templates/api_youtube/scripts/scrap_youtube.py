@@ -1,3 +1,5 @@
+#test
+# test2
 import os
 import json
 import yt_dlp
@@ -37,7 +39,7 @@ def progress_hook(d):
         print(f"PROGRESS: 100%")
     sys.stdout.flush()
 
-def search_youtube(query, max_results=10):
+def search_youtube(query, max_results=1):
     try:
         search = VideosSearch(query, limit=max_results, language='fr')
         results = search.result()['result']
@@ -83,9 +85,9 @@ def get_video_info(video_id, category):
         'writethumbnail': True,
         'skip_download': False,
         'noplaylist': True,
-        'retries': 5,
-        'fragment-retries': 5,
-        'socket-timeout': 30,  # Augmentez le timeout du socket
+        'retries': 10,  # Augmenter le nombre de tentatives
+        'fragment-retries': 10,  # Augmenter le nombre de tentatives pour les fragments
+        'socket-timeout': 60,  # Augmenter le timeout du socket
         'progress_hooks': [progress_hook],
     }
 
@@ -124,7 +126,7 @@ def get_video_info(video_id, category):
         print(f"ERROR: Unexpected error occurred for video {video_id}. Error: {e}", file=sys.stderr)
         return None
 
-def scrape_youtube_videos(query, category, max_results=10):
+def scrape_youtube_videos(query, category, max_results=1):
     video_ids, results = search_youtube(query, max_results)
     videos_data = []
 
@@ -142,7 +144,7 @@ sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
 
 all_videos_data = {}
 for category, query in categories.items():
-    all_videos_data[category] = scrape_youtube_videos(query, category, max_results=10)
+    all_videos_data[category] = scrape_youtube_videos(query, category, max_results=1)
 
 # Enregistrer les données JSON dans un fichier dans api/data
 try:
